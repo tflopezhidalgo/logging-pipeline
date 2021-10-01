@@ -1,38 +1,40 @@
-import time
-import multiprocessing
+from time import sleep
+from multiprocessing import Queue
+
+from acceptor import Acceptor
+from router import Router as WriterRouter
+from log_writer import LogWriter
+from write_responser import Responser
+
 
 # XXX: should be taken from environment
 SERVER_PORT = 8000
 SERVER_BACKLOG = 10
 
 
-class Server:
-    def __init__(self, q):
-        self._q = q
-        self._me = multiprocessing.Process(target=self.run)
-
-    def start(self):
-        self._me.start()
-        print("Started!")
-
-    def run(self):
-        print("Hey, I'm running in another process!")
-        print("I'm gonna sleep for 10 secs.")
-        time.sleep(10)
-        print("Alright I'm awaken")
-
-    def stop(self):
-        self._me.join()
-
-
 def main(server_port):
-    s = Server(None)
-    s.start()
-    for _ in range(0, 10):
-        print("Hey!")
-        time.sleep(1)
 
-    s.stop()
+    router_q = Queue()
+    result_q = Queue()
+    writer_queue_1 = Queue()
+    writers_queues = [writer_queue_1]
+
+    acceptor = Acceptor(router_q, SERVER_PORT, SERVER_BACKLOG, result_q)
+    router = WriterRouter(router_q, writers_queues)
+    log_writer = LogWriter(writer_queue_1, result_q)
+    responser = Responser(result_q)
+
+    acceptor.start()
+    router.start()
+    log_writer.start()
+    responser.start()
+
+    input()
+
+    acceptor.stop()
+    router.stop()
+    log_writer.stop()
+    responser.stop()
 
 
 if __name__ == "__main__":
