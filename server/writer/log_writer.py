@@ -4,9 +4,7 @@ from datetime import datetime
 
 import os
 
-FILENAME = "testing.log"
 SENTINEL = None
-
 
 Result = tuple[socket, str]
 
@@ -75,6 +73,6 @@ class LogWriter(Process):
             self._result_q.put(result)
 
     def stop(self):
-        self._operation_q.put(SENTINEL)
         self._alive.value = False
+        self._operation_q.put(SENTINEL)
         self.join()

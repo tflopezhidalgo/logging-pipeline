@@ -1,5 +1,5 @@
 import os
-from multiprocessing import Queue
+from multiprocessing import Queue, Manager
 
 from shared import Acceptor, Router, AccessManager
 from reader import LogReader, RResponser
@@ -7,15 +7,16 @@ from writer import LogWriter, WResponser
 
 
 # XXX: should be taken from environment
-SERVER_PORT = 8100
-SERVER_BACKLOG = 10
+SERVER_PORT = 8000
+SERVER_BACKLOG = 100
 
 # TODO: bad name
 CONCURRENCY = int(os.environ.get('CONC', '1'))
 
 
 def start_reader_processes(server_port, access_managers):
-    router_q = Queue()
+    manager = Manager()
+    router_q = manager.Queue()
     result_q = Queue()
 
     readers_queues = [Queue() for _ in range(CONCURRENCY)]
@@ -40,7 +41,8 @@ def start_reader_processes(server_port, access_managers):
 
 
 def start_writer_processes(server_port, access_managers):
-    router_q = Queue()
+    manager = Manager()
+    router_q = manager.Queue()
     result_q = Queue()
 
     writers_queues = [Queue() for _ in range(CONCURRENCY)]
@@ -73,7 +75,10 @@ def main(server_port):
     input()
 
     for p in writer_processes + reader_processes:
+        print(f"Closing {p}")
         p.stop()
+        p.join()
+
 
 
 if __name__ == "__main__":

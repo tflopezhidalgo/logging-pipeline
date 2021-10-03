@@ -1,6 +1,5 @@
-from socket import socket, AF_INET, SOCK_STREAM
+from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from multiprocessing import Process, Value
-
 
 class Acceptor(Process):
     """
@@ -18,6 +17,7 @@ class Acceptor(Process):
         self._fallback_q = fallback_queue
 
         self._socket = socket(AF_INET, SOCK_STREAM)
+        print(f"Acceptor socket on {self._socket}")
         self._socket.bind(("", port))
         self._socket.listen(listen_backlog)
 
@@ -39,10 +39,15 @@ class Acceptor(Process):
                 self.__handle_client_connection(client_sock)
                 # Clean the previous connection as fast as we can
                 client_sock = None
-            except (Exception, OSError):
-                pass
+            except (Exception, OSError) as e:
+                print(e)
 
     def stop(self):
         self._alive.value = False
         # FIXME: shutdown
+        try:
+            self._socket.shutdown(SHUT_RDWR)
+        except:
+            print("Unable to shutdown socket")
         self._socket.close()
+        self.terminate()

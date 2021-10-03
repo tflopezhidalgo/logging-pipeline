@@ -9,7 +9,8 @@ parser = argparse.ArgumentParser()
 # TODO: change this to container addr
 # TODO: set these as env vars
 SERVER_ADDR = "127.0.0.1"
-SERVER_PORT = 8100  # write port
+SERVER_PORT = 8000  # write port
+SAMPLE_SIZE = 100
 MSG_SEP = "/"
 
 
@@ -58,8 +59,6 @@ def send_msg(server_addr, port, log_data):
     msg = sock.recv(int("".join(received)))
     msg = msg.decode()
 
-    # print(msg)
-
     sock.close()
 
 
@@ -73,7 +72,7 @@ def main(args) -> None:
         send_msg(server_addr, port + 1, log_msg)
     else:
         dates = [
-            datetime.now() + d * timedelta(minutes=15) for d in range(0, 1)
+            datetime.now() + d * timedelta(minutes=15) for d in range(SAMPLE_SIZE)
         ]
 
         for d in dates:
@@ -95,4 +94,4 @@ if __name__ == "__main__":
 
     stop = time.time()
 
-    print("Taken %s secs." % (stop - start))
+    print(f"[{args.app}] Taken %s secs." % (stop - start))
