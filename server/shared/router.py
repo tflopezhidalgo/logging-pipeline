@@ -1,5 +1,4 @@
 import os
-import socket
 import json
 from multiprocessing import Value, Queue, Pool, Process, Manager
 
@@ -30,7 +29,6 @@ def handle_connection(sock):
 def run(pending_q, dispatch_queues, alive):
     alive.value = True
 
-    print('hey', flush=True)
     while True:
         connection = pending_q.get()
         if connection is None:
@@ -43,6 +41,7 @@ def run(pending_q, dispatch_queues, alive):
 
         dispatch_queues[q].put((connection, operation))
 
+
 class Router:
     def __init__(self, pending_queue: Queue, dispatch_queues: list[Queue]):
         self._alive = Value("b", False)
@@ -53,7 +52,6 @@ class Router:
         self._pool = [Process(target=run, args=(self._pending_q, self._dispatch_q, self._alive)) for _ in range(WORKERS)]
         for p in self._pool:
             p.start()
-            print('started')
 
     def join(self):
         for p in self._pool:

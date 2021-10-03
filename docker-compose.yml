@@ -4,30 +4,39 @@ services:
   server:
     build: ./server
     image: server:latest
+    stdin_open: true
+    tty: true
     container_name: server
+    volumes:
+      - "./server:/server"
+      - "./logs:/logs"
     environment:
       - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONHASHSEED=0
       - SERVER_PORT=12345
-      - SERVER_LISTEN_BACKLOG=7
+      - SERVER_LISTEN_BACKLOG=100
       - LOGGING_LEVEL=DEBUG
+      - CONC=30
+      - WORKERS=30
     networks:
       - logging_pipeline_net
-
   client:
     build: ./client
     image: client:latest
     container_name: client
+    volumes:
+      - "./client:/client"
     environment:
       - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
       - CLI_ID=1
-      - CLI_SERVER_ADDRESS=server:12345
-      - CLI_LOOP_LAPSE=1m2s
-      - CLI_LOG_LEVEL=DEBUG
+      - CLI_SERVER_ADDRESS=server
+      - CLI_SERVER_WRITE_PORT=12345
     networks:
       - logging_pipeline_net
     depends_on:
       - server
-
 networks:
   logging_pipeline_net:
     ipam:

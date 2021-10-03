@@ -1,4 +1,7 @@
 import os
+import time
+import signal
+
 from multiprocessing import Queue, Manager
 
 from shared import Acceptor, Router, AccessManager
@@ -7,8 +10,8 @@ from writer import LogWriter, WResponser
 
 
 # XXX: should be taken from environment
-SERVER_PORT = 8000
-SERVER_BACKLOG = 100
+SERVER_PORT = int(os.environ.get('SERVER_PORT'))
+SERVER_BACKLOG = int(os.environ.get('SERVER_LISTEN_BACKLOG'))
 
 # TODO: bad name
 CONCURRENCY = int(os.environ.get('CONC', '1'))
@@ -65,20 +68,27 @@ def start_writer_processes(server_port, access_managers):
     return [acceptor, router, responser] + writers_pool
 
 
-def main(server_port):
+def shutdown(processes):
+    print("i'm dying", flush=True)
+    for p in processes + reader_processes:
+        p.stop()
+        p.join()
 
+
+def main(server_port):
     access_managers = [AccessManager() for _ in range(CONCURRENCY)]
 
     writer_processes = start_writer_processes(server_port, access_managers)
     reader_processes = start_reader_processes(server_port + 1, access_managers)
 
-    input()
+    signal.signal(signal.SIGTERM, lambda: shutdown(writer_processes + reader_processes))
 
-    for p in writer_processes + reader_processes:
-        print(f"Closing {p}")
-        p.stop()
-        p.join()
+    stop = False
+    while not stop:
+        response = input()
+        stop = (response == 'q')
 
+    shutdown(writer_processes + reader_processes)
 
 
 if __name__ == "__main__":

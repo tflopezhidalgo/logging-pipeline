@@ -1,6 +1,7 @@
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from multiprocessing import Process, Value
 
+
 class Acceptor(Process):
     """
     Responsible for handling throttling operations.
@@ -18,7 +19,7 @@ class Acceptor(Process):
 
         self._socket = socket(AF_INET, SOCK_STREAM)
         print(f"Acceptor socket on {self._socket}")
-        self._socket.bind(("", port))
+        self._socket.bind(("0.0.0.0", port))
         self._socket.listen(listen_backlog)
 
     def __handle_client_connection(self, client_sock):
@@ -40,7 +41,7 @@ class Acceptor(Process):
                 # Clean the previous connection as fast as we can
                 client_sock = None
             except (Exception, OSError) as e:
-                print(e)
+                pass
 
     def stop(self):
         self._alive.value = False
@@ -50,4 +51,4 @@ class Acceptor(Process):
         except:
             print("Unable to shutdown socket")
         self._socket.close()
-        self.terminate()
+        # self.terminate()

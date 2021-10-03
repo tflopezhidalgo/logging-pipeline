@@ -1,3 +1,7 @@
 #!/bin/bash
 
-python3 ./main.py
+
+# testing script 
+./test_concurrent_writing.sh
+
+# python3 ./main.py

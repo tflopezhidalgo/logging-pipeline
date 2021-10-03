@@ -17,7 +17,7 @@ def build_filename(params):
 
 
 def build_log_data(params):
-    return f'[{params.get("timestamp")}] {params.get("message")}\n'
+    return f'[{params.get("timestamp")}][{"".join(params.get("tags"))}] {params.get("message")}\n'
 
 
 class LogWriter(Process):

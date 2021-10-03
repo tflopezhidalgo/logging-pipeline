@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import argparse
 from datetime import datetime, timedelta
@@ -6,10 +7,9 @@ from socket import socket, AF_INET, SOCK_STREAM
 
 parser = argparse.ArgumentParser()
 
-# TODO: change this to container addr
-# TODO: set these as env vars
-SERVER_ADDR = "127.0.0.1"
-SERVER_PORT = 8000  # write port
+SERVER_ADDR = os.environ.get('CLI_SERVER_ADDRESS', "127.0.0.1")
+SERVER_PORT = int(os.environ.get('CLI_SERVER_WRITE_PORT', "8000"))
+
 SAMPLE_SIZE = 100
 MSG_SEP = "/"
 
