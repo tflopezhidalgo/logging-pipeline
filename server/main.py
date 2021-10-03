@@ -1,5 +1,4 @@
 import os
-import time
 import signal
 
 from multiprocessing import Queue, Manager
