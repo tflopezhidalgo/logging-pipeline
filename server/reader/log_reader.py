@@ -49,14 +49,14 @@ class LogReader(Process):
         self._alive.value = True
 
         while self._alive.value:
-            write_operation: tuple[socket, dict] = self._operation_q.get()
+            read_operation: tuple[socket, dict] = self._operation_q.get()
 
-            if write_operation is None:
+            if read_operation is None:
                 break
 
-            print(f"Found read operation: {write_operation}")
+            print(f"Found read operation: {read_operation}")
 
-            result = self.__process_operation(write_operation)
+            result = self.__process_operation(read_operation)
 
             self._result_q.put(result)
 

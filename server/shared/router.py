@@ -1,12 +1,15 @@
+import os
 import json
-from multiprocessing import Process, Value, Queue
+from multiprocessing import Value, Queue, Pool
+
+WORKERS = int(os.environ.get('WORKERS', 3))
+CONCURRENCY = int(os.environ.get('CONC', '1'))
 
 
 def get_queue(app_id):
-    return 0
+    return hash(app_id) % CONCURRENCY
 
-
-class Router(Process):
+class Router:
     def __init__(self, pending_queue: Queue, dispatch_queues: list[Queue]):
         super().__init__()
 
@@ -29,21 +32,29 @@ class Router(Process):
         msg = sock.recv(int(buf))
         return json.loads(msg.decode())
 
+    def start(self):
+        self._pool = Pool(WORKERS, self.run)
+
     def run(self):
         self._alive.value = True
 
         while self._alive.value:
-            try:
-                connection = self._pending_q.get(timeout=1)
-                operation = self._handle_connection(connection)
-                print(f"router got {operation}")
+            connection = self._pending_q.get()
+            if connection is None:
+                break
 
-                self._dispatch_q[get_queue(operation["app_id"])].put(
-                    (connection, operation)
-                )
-            except Exception:
-                pass
+            operation = self._handle_connection(connection)
+            print(f"router {os.getpid()} got {operation}")
+
+            q = get_queue(operation["app_id"])
+
+            print("Dispatching to %s" % q)
+
+            self._dispatch_q[q].put((connection, operation))
 
     def stop(self):
         self._alive.value = False
-        self.join()
+        for i in range(WORKERS):
+            self._pending_q.put(None)
+        self._pool.close()
+        self._pool.join()

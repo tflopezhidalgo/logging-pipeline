@@ -1,3 +1,4 @@
+import os
 from multiprocessing import Queue
 
 from shared import Acceptor, Router, AccessManager
@@ -9,54 +10,65 @@ from writer import LogWriter, WResponser
 SERVER_PORT = 8100
 SERVER_BACKLOG = 10
 
+# TODO: bad name
+CONCURRENCY = int(os.environ.get('CONC', '1'))
 
-def start_reader_processes(server_port, access_manager):
+
+def start_reader_processes(server_port, access_managers):
     router_q = Queue()
     result_q = Queue()
-    reader_q_1 = Queue()
-    readers_queues = [reader_q_1]
+
+    readers_queues = [Queue() for _ in range(CONCURRENCY)]
+
+    readers_pool = [LogReader(q, result_q, am) for q, am in zip(readers_queues, access_managers)]
 
     acceptor = Acceptor(router_q, server_port, SERVER_BACKLOG, result_q)
-    router = Router(router_q, readers_queues)
 
-    log_reader = LogReader(reader_q_1, result_q, access_manager)
+    router = Router(router_q, readers_queues)
 
     responser = RResponser(result_q)
 
     acceptor.start()
     router.start()
-    log_reader.start()
+
+    for reader in readers_pool:
+        reader.start()
+
     responser.start()
 
-    return [acceptor, router, log_reader, responser]
+    return [acceptor, router, responser] + readers_pool
 
 
-def start_writer_processes(server_port, access_manager):
+def start_writer_processes(server_port, access_managers):
     router_q = Queue()
     result_q = Queue()
-    writer_q_1 = Queue()
-    writers_queues = [writer_q_1]
+
+    writers_queues = [Queue() for _ in range(CONCURRENCY)]
 
     acceptor = Acceptor(router_q, server_port, SERVER_BACKLOG, result_q)
     router = Router(router_q, writers_queues)
 
-    log_writer = LogWriter(writer_q_1, result_q, access_manager)
+    writers_pool = [LogWriter(q, result_q, am) for q, am in zip(writers_queues, access_managers)]
 
     responser = WResponser(result_q)
 
     acceptor.start()
     router.start()
-    log_writer.start()
+
+    for writer in writers_pool:
+        writer.start()
+
     responser.start()
 
-    return [acceptor, router, log_writer, responser]
+    return [acceptor, router, responser] + writers_pool
 
 
 def main(server_port):
-    access_manager = AccessManager()
 
-    writer_processes = start_writer_processes(server_port, access_manager)
-    reader_processes = start_reader_processes(server_port + 1, access_manager)
+    access_managers = [AccessManager() for _ in range(CONCURRENCY)]
+
+    writer_processes = start_writer_processes(server_port, access_managers)
+    reader_processes = start_reader_processes(server_port + 1, access_managers)
 
     input()
 

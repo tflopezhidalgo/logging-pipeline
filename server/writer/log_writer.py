@@ -70,8 +70,6 @@ class LogWriter(Process):
             if write_operation is None:
                 break
 
-            print(f"Found write operation: {write_operation}")
-
             result = self.__process_operation(write_operation)
 
             self._result_q.put(result)
