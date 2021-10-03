@@ -39,11 +39,10 @@ class Acceptor(Process):
                 self.__handle_client_connection(client_sock)
                 # Clean the previous connection as fast as we can
                 client_sock = None
-            except Exception:
+            except (Exception, OSError):
                 pass
 
-        self._socket.close()
-
     def stop(self):
-        # FIXME
         self._alive.value = False
+        # FIXME: shutdown
+        self._socket.close()

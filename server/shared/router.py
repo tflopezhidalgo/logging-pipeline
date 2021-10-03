@@ -46,3 +46,4 @@ class Router(Process):
 
     def stop(self):
         self._alive.value = False
+        self.join()

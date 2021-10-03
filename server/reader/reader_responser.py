@@ -19,8 +19,9 @@ class Responser(Process):
                 msg = f"{len(result)}/{result}"
                 sock.sendall(msg.encode("utf8"))
                 sock.close()
-            except Exception as e:
+            except Exception:
                 pass
 
     def stop(self):
         self._alive.value = False
+        self.join()
