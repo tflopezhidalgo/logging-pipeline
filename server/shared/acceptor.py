@@ -2,6 +2,9 @@ from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from multiprocessing import Process, Value
 
 
+from utils import logging
+
+
 class Acceptor(Process):
     """
     Responsible for handling throttling operations.
@@ -9,6 +12,10 @@ class Acceptor(Process):
     then it'll avoid adding another operation to that queue, and instead it
     will add a message in responser's queue.
     """
+
+    # If there're more than 100 items enqueued
+    # start to throttling
+    THROTTLING_THRESHOLD = 100
 
     def __init__(self, dispatch_queue, port, listen_backlog, fallback_queue):
         super().__init__()
@@ -18,7 +25,6 @@ class Acceptor(Process):
         self._fallback_q = fallback_queue
 
         self._socket = socket(AF_INET, SOCK_STREAM)
-        print(f"Acceptor socket on {self._socket}")
         self._socket.bind(("0.0.0.0", port))
         self._socket.listen(listen_backlog)
 
@@ -28,7 +34,7 @@ class Acceptor(Process):
     def __accept_new_connection(self):
         # Connection arrived
         c, addr = self._socket.accept()
-        print("Got connection from {}".format(addr))
+        logging.info("Got connection from {}".format(addr))
         return c
 
     def run(self):
@@ -40,15 +46,14 @@ class Acceptor(Process):
                 self.__handle_client_connection(client_sock)
                 # Clean the previous connection as fast as we can
                 client_sock = None
-            except (Exception, OSError) as e:
+            except (Exception, OSError):
                 pass
 
     def stop(self):
-        self._alive.value = False
         # FIXME: shutdown
         try:
             self._socket.shutdown(SHUT_RDWR)
-        except:
-            print("Unable to shutdown socket")
+        except OSError:
+            logging.error("Unable to shutdown socket")
         self._socket.close()
         # self.terminate()

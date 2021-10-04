@@ -1,4 +1,3 @@
-import json
 import os
 import time
 import argparse
@@ -6,61 +5,52 @@ import argparse
 from datetime import datetime, timedelta
 from socket import socket, AF_INET, SOCK_STREAM
 
+from utils import send_msg, recv_msg
+
 parser = argparse.ArgumentParser()
 
-SERVER_ADDR = os.environ.get('CLI_SERVER_ADDRESS', "127.0.0.1")
-SERVER_PORT = int(os.environ.get('CLI_SERVER_WRITE_PORT', "8000"))
+SERVER_ADDR = os.environ.get("CLI_SERVER_ADDRESS", "127.0.0.1")
+SERVER_PORT = int(os.environ.get("CLI_SERVER_WRITE_PORT", "8000"))
 
 SAMPLE_SIZE = 100
 MSG_SEP = "/"
 
 
 def build_read_msg(app_id):
-    log_data = {
+    date1 = datetime(year=2021, month=10, day=4, hour=4, minute=30).isoformat()
+    date2 = datetime(year=2021, month=10, day=4, hour=7, minute=30).isoformat()
+    print(f"Asking for logs between {date1} and {date2}")
+    return {
         "app_id": app_id or "testing_app_id",
-        "from": "",
-        "to": "",
-        "tag": ["testing", "test"],
+        "from": date1,
+        "to": date2,
+        "tag": "falopini",
         "pattern": "",
     }
 
-    json_data = json.dumps(log_data)
-
-    return f"{len(json_data)}/{json_data}"
-
 
 def build_log_msg(current_date, app_id):
-    log_data = {
+    return {
         "app_id": app_id or "testing_app_id",
         "message": "This is my first log.",
         "tags": ["testing", "test"],
         "timestamp": current_date.isoformat(),
     }
 
-    json_data = json.dumps(log_data)
 
-    return f"{len(json_data)}/{json_data}"
-
-
-def send_msg(server_addr, port, log_data):
+def send_log_data(server_addr, port, log_data):
     sock = socket(AF_INET, SOCK_STREAM)
     sock.connect((server_addr, port))
-    sock.sendall(log_data.encode("utf8"))
 
-    done = False
-    received = []
+    send_msg(sock, log_data)
 
-    while not done:
-        c = sock.recv(1)
-        c = c.decode()
-        if c != "/":
-            received.append(c)
-        else:
-            done = True
-    msg = sock.recv(int("".join(received)))
-    msg = msg.decode()
+    print("Waiting for response...")
+
+    response = recv_msg(sock)
 
     sock.close()
+
+    return response
 
 
 def main(args) -> None:
@@ -70,29 +60,59 @@ def main(args) -> None:
 
     if args.read:
         log_msg = build_read_msg(app_id)
-        send_msg(server_addr, port + 1, log_msg)
+        result = send_log_data(server_addr, port + 1, log_msg)
+        print(f"result {result}")
     else:
         dates = [
-            datetime.now() + d * timedelta(minutes=15) for d in range(SAMPLE_SIZE)
+            datetime.now() + d * timedelta(minutes=15)
+            for d in range(SAMPLE_SIZE)
         ]
 
         for d in dates:
             log_msg = build_log_msg(d, app_id)
-            send_msg(server_addr, port, log_msg)
+            send_log_data(server_addr, port, log_msg)
+
+
+class Timer:
+    """
+    Small class to use as a context manager
+    for measure execution times.
+    """
+
+    def __init__(self):
+        self.start = None
+        self.stop = None
+
+    def __enter__(self):
+        self.start = time.time()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.stop = time.time()
+
+    def get_elapsed(self):
+        return self.stop - self.start
 
 
 if __name__ == "__main__":
-    start = time.time()
-
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Show execution time after finishing",
+    )
     parser.add_argument(
         "--read", action="store_true", help="Use read operation flag"
     )
     parser.add_argument(
-        "--app", type=str, help="Application's id"
+        "--app", required=True, type=str, help="Application's id"
     )
+
     args = parser.parse_args()
-    main(args)
 
-    stop = time.time()
+    timer = Timer()
 
-    print(f"[{args.app}] Taken %s secs." % (stop - start))
+    with timer:
+        main(args)
+
+    if args.profile:
+        print(f"[{args.app}] Took %s secs." % (timer.get_elapsed()))

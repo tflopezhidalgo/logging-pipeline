@@ -3,6 +3,11 @@ import ctypes
 
 
 class _DummyLock:
+    """
+    Fake lock given to those proccesses (mostly readers)
+    who don't need access in a process-safe way to files.
+    """
+
     def __enter__(self, *args, **kwargs):
         pass  # noqa: E704
 

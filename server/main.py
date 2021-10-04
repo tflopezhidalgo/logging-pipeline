@@ -3,17 +3,18 @@ import signal
 
 from multiprocessing import Queue, Manager
 
-from shared import Acceptor, Router, AccessManager
+from shared import Acceptor, RouterPool, AccessManager
 from reader import LogReader, RResponser
 from writer import LogWriter, WResponser
 
 
 # XXX: should be taken from environment
-SERVER_PORT = int(os.environ.get('SERVER_PORT'))
-SERVER_BACKLOG = int(os.environ.get('SERVER_LISTEN_BACKLOG'))
+SERVER_PORT = int(os.environ.get("SERVER_PORT"))
+SERVER_BACKLOG = int(os.environ.get("SERVER_LISTEN_BACKLOG"))
 
 # TODO: bad name
-CONCURRENCY = int(os.environ.get('CONC', '1'))
+CONCURRENCY = int(os.environ.get("CONC", "1"))
+WORKERS = int(os.environ.get("WORKERS", 3))
 
 
 def start_reader_processes(server_port, access_managers):
@@ -23,11 +24,14 @@ def start_reader_processes(server_port, access_managers):
 
     readers_queues = [Queue() for _ in range(CONCURRENCY)]
 
-    readers_pool = [LogReader(q, result_q, am) for q, am in zip(readers_queues, access_managers)]
+    readers_pool = [
+        LogReader(q, result_q, am)
+        for q, am in zip(readers_queues, access_managers)
+    ]
 
     acceptor = Acceptor(router_q, server_port, SERVER_BACKLOG, result_q)
 
-    router = Router(router_q, readers_queues)
+    router = RouterPool(WORKERS, router_q, readers_queues)
 
     responser = RResponser(result_q)
 
@@ -50,9 +54,12 @@ def start_writer_processes(server_port, access_managers):
     writers_queues = [Queue() for _ in range(CONCURRENCY)]
 
     acceptor = Acceptor(router_q, server_port, SERVER_BACKLOG, result_q)
-    router = Router(router_q, writers_queues)
+    router = RouterPool(WORKERS, router_q, writers_queues)
 
-    writers_pool = [LogWriter(q, result_q, am) for q, am in zip(writers_queues, access_managers)]
+    writers_pool = [
+        LogWriter(q, result_q, am)
+        for q, am in zip(writers_queues, access_managers)
+    ]
 
     responser = WResponser(result_q)
 
@@ -68,8 +75,7 @@ def start_writer_processes(server_port, access_managers):
 
 
 def shutdown(processes):
-    print("i'm dying", flush=True)
-    for p in processes + reader_processes:
+    for p in processes:
         p.stop()
         p.join()
 
@@ -80,12 +86,17 @@ def main(server_port):
     writer_processes = start_writer_processes(server_port, access_managers)
     reader_processes = start_reader_processes(server_port + 1, access_managers)
 
-    signal.signal(signal.SIGTERM, lambda: shutdown(writer_processes + reader_processes))
+    signal.signal(
+        signal.SIGTERM, lambda: shutdown(writer_processes + reader_processes)
+    )
 
     stop = False
     while not stop:
-        response = input()
-        stop = (response == 'q')
+        try:
+            response = input()
+        except Exception:
+            response = None
+        stop = response == "q"
 
     shutdown(writer_processes + reader_processes)
 

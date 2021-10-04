@@ -1,7 +1,10 @@
 #!/bin/bash
 
+TEST_FILE="./tests/test_$TEST.sh"
 
-# testing script 
-./test_concurrent_writing.sh
-
-# python3 ./main.py
+if [[ -f $TEST_FILE ]]; then
+    echo "Running '$TEST' tests..."
+    ./$TEST_FILE
+else
+    echo "Looks like there's no tests with that name"
+fi

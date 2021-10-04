@@ -1,26 +1,31 @@
-from multiprocessing import Process, Value
+from multiprocessing import Process
 
-SENTINEL = (None, None)
+from utils import logging
+
 
 class Responser(Process):
+
+    SENTINEL = (None, None)
+
     def __init__(self, incoming_queue):
         super().__init__()
 
-        self._alive = Value("b", False)
         self._incoming_q = incoming_queue
 
     def run(self):
-        self._alive.value = True
+        while True:
+            popped = self._incoming_q.get()
 
-        while self._alive.value:
-            (sock, result) = self._incoming_q.get()
-
-            if sock is None:
+            if popped == self.SENTINEL:
                 break
+
+            (sock, result) = popped
 
             result = str(result)
 
-            print(f"[RESPONSER] Responding to {sock.getpeername()}")
+            result = {"result": result}
+
+            logging.info(f"[RESPONSER] Responding to {sock.getpeername()}")
 
             msg = f"{len(result)}/{result}"
             sock.sendall(msg.encode("utf8"))
@@ -28,6 +33,5 @@ class Responser(Process):
             sock.close()
 
     def stop(self):
-        self._alive.value = False
-        self._incoming_q.put(SENTINEL)
+        self._incoming_q.put(self.SENTINEL)
         self.join()

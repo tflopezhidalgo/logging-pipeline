@@ -9,7 +9,6 @@ services:
     container_name: server
     volumes:
       - "./server:/server"
-      - "./logs:/logs"
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
@@ -17,8 +16,8 @@ services:
       - SERVER_PORT=12345
       - SERVER_LISTEN_BACKLOG=100
       - LOGGING_LEVEL=DEBUG
-      - CONC=30
-      - WORKERS=30
+      - CONC=50
+      - WORKERS=50
     networks:
       - logging_pipeline_net
   client:
@@ -33,6 +32,7 @@ services:
       - CLI_ID=1
       - CLI_SERVER_ADDRESS=server
       - CLI_SERVER_WRITE_PORT=12345
+      - TEST=profile_concurrent_reading
     networks:
       - logging_pipeline_net
     depends_on:

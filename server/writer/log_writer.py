@@ -1,23 +1,23 @@
-from socket import socket
-from multiprocessing import Process, Value, Queue
-from datetime import datetime
-
 import os
 
-SENTINEL = None
+from socket import socket
+from multiprocessing import Process, Queue
 
 Result = tuple[socket, str]
 
 
+# TODO -> utils
 def build_filename(params):
-    timestamp = params.get("timestamp")
-    log_date = datetime.fromisoformat(timestamp)
-
+    log_date = params.get("timestamp")
     return f"{log_date.date().isoformat()}-{log_date.hour:0>2}.log"
 
 
 def build_log_data(params):
-    return f'[{params.get("timestamp")}][{"".join(params.get("tags"))}] {params.get("message")}\n'
+    timestamp = params.get("timestamp")
+    tags = "|".join(params.get("tags"))
+    message = params.get("message")
+
+    return f"[{timestamp}][{tags}] {message}\n"
 
 
 class LogWriter(Process):
@@ -25,12 +25,13 @@ class LogWriter(Process):
     Handles opening and closing file-related operations.
     """
 
+    SENTINEL = None
+
     def __init__(
         self, operation_q: Queue, result_q: "Queue[Result]", access_control_mgr
     ):
         super().__init__()
 
-        self._alive = Value("b", False)
         self._operation_q = operation_q
         self._result_q = result_q
         self._access_control_mgr = access_control_mgr
@@ -60,12 +61,10 @@ class LogWriter(Process):
         return (sock, "OK")
 
     def run(self):
-        self._alive.value = True
-
-        while self._alive.value:
+        while True:
             write_operation: tuple[socket, dict] = self._operation_q.get()
 
-            if write_operation is None:
+            if write_operation is self.SENTINEL:
                 break
 
             result = self.__process_operation(write_operation)
@@ -74,5 +73,5 @@ class LogWriter(Process):
 
     def stop(self):
         self._alive.value = False
-        self._operation_q.put(SENTINEL)
+        self._operation_q.put(self.SENTINEL)
         self.join()
