@@ -16,9 +16,9 @@ services:
       - SERVER_PORT=12345
       - SERVER_LISTEN_BACKLOG=100
       - LOGGING_LEVEL=DEBUG
-      - FILE_WORKERS=5
-      - ROUTER_P_SIZE=5
-      - RESPONSER_P_SIZE=5
+      - FILE_WORKERS=1
+      - ROUTER_P_SIZE=1
+      - RESPONSER_P_SIZE=1
     networks:
       - logging_pipeline_net
   client:
@@ -33,7 +33,7 @@ services:
       - CLI_ID=1
       - CLI_SERVER_ADDRESS=server
       - CLI_SERVER_WRITE_PORT=12345
-      - TEST=invalid_params
+      - TEST=profiling_only_writers
     networks:
       - logging_pipeline_net
     depends_on:

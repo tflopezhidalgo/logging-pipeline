@@ -1,0 +1,49 @@
+from multiprocessing import Process
+
+from utils import logging, send_msg
+
+
+class _Responser(Process):
+
+    SENTINEL = (None, None)
+
+    def __init__(self, incoming_queue):
+        super().__init__()
+
+        self._incoming_q = incoming_queue
+
+    def run(self):
+        while True:
+            conn_result = self._incoming_q.get()
+
+            if conn_result == self.SENTINEL:
+                break
+
+            (sock, result) = conn_result
+
+            logging.info(f"[RESPONSER] Responding to {sock.getpeername()}")
+
+            send_msg(sock, {'result': result})
+
+            sock.close()
+
+    def stop(self):
+        self._incoming_q.put(self.SENTINEL)
+        self.join()
+
+
+class ResponserPool:
+    def __init__(self, size, incoming_q):
+        self._pool = [_Responser(incoming_q) for _ in range(size)]
+
+    def start(self):
+        for router in self._pool:
+            router.start()
+
+    def join(self):
+        for router in self._pool:
+            router.join()
+
+    def stop(self):
+        for router in self._pool:
+            router.stop()
