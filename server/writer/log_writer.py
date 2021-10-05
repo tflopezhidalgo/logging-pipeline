@@ -3,7 +3,7 @@ import os
 from socket import socket
 from multiprocessing import Process, Queue
 
-from utils import build_filename
+from utils import build_filename, logging
 
 Result = tuple[socket, str]
 
@@ -14,7 +14,7 @@ class LogWriter(Process):
     """
 
     SENTINEL = None
-    LOGS_FOLDER = 'logs'
+    LOGS_FOLDER = "logs"
 
     def __init__(
         self, operation_q: Queue, result_q: "Queue[Result]", access_control_mgr
@@ -33,7 +33,7 @@ class LogWriter(Process):
         return f"[{timestamp}][{tags}] {message}\n"
 
     def __process_operation(self, params):
-        filename = build_filename(params.get('timestamp'))
+        filename = build_filename(params.get("timestamp"))
 
         app_id = params.get("app_id")
 
@@ -60,11 +60,16 @@ class LogWriter(Process):
         while True:
             write_operation: tuple[socket, dict] = self._operation_q.get()
 
-            if write_operation is self.SENTINEL: break # noqa
+            if write_operation is self.SENTINEL:
+                break  # noqa
 
             (sock, params) = write_operation
 
-            result = self.__process_operation(params)
+            try:
+                result = self.__process_operation(params)
+            except Exception as e:
+                logging.error(e)
+                result = "Failed to write logs."
 
             self._result_q.put((sock, result))
 

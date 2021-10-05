@@ -29,8 +29,6 @@ class LogReader(Process):
         from_filename = build_filename(from_)
         to_filename = build_filename(to)
 
-        logging.info(f"Filtering beetween {from_filename} and {to_filename}")
-
         filtered = list(
             filter(
                 lambda filename: (
@@ -39,7 +37,6 @@ class LogReader(Process):
                 filenames,
             )
         )
-        logging.info("\n".join(filtered))
         return filtered
 
     def __apply_filters_to_line(self, line, params):
@@ -131,7 +128,11 @@ class LogReader(Process):
             if (sock, operation_params) == self.SENTINEL:
                 break  # noqa
 
-            result = self.__perform_operation(operation_params)
+            try:
+                result = self.__perform_operation(operation_params)
+            except Exception as e:
+                logging.error(e)
+                result = "Failed to read files."
 
             self._result_q.put((sock, result))
 
