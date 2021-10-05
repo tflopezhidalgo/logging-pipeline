@@ -3,21 +3,9 @@ import os
 from socket import socket
 from multiprocessing import Process, Queue
 
+from utils import build_filename
+
 Result = tuple[socket, str]
-
-
-# TODO -> utils
-def build_filename(params):
-    log_date = params.get("timestamp")
-    return f"{log_date.date().isoformat()}-{log_date.hour:0>2}.log"
-
-
-def build_log_data(params):
-    timestamp = params.get("timestamp")
-    tags = "|".join(params.get("tags"))
-    message = params.get("message")
-
-    return f"[{timestamp}][{tags}] {message}\n"
 
 
 class LogWriter(Process):
@@ -26,6 +14,7 @@ class LogWriter(Process):
     """
 
     SENTINEL = None
+    LOGS_FOLDER = 'logs'
 
     def __init__(
         self, operation_q: Queue, result_q: "Queue[Result]", access_control_mgr
@@ -36,40 +25,48 @@ class LogWriter(Process):
         self._result_q = result_q
         self._access_control_mgr = access_control_mgr
 
-    def __process_operation(self, write_operation):
-        (sock, params) = write_operation
+    def __build_log_data(self, params):
+        timestamp = params.get("timestamp")
+        tags = "|".join(params.get("tags"))
+        message = params.get("message")
 
-        filename = build_filename(params)
+        return f"[{timestamp}][{tags}] {message}\n"
+
+    def __process_operation(self, params):
+        filename = build_filename(params.get('timestamp'))
 
         app_id = params.get("app_id")
 
         available_folders = os.listdir(".")
 
-        if "logs" not in available_folders:
-            os.mkdir("logs")
+        if self.LOGS_FOLDER not in available_folders:
+            os.mkdir(self.LOGS_FOLDER)
 
-        available_folders = os.listdir("logs")
+        available_folders = os.listdir(self.LOGS_FOLDER)
 
         if app_id not in available_folders:
-            os.mkdir("logs" + "/" + app_id)
+            os.mkdir(os.path.join(self.LOGS_FOLDER, app_id))
 
         with self._access_control_mgr.get_lock_for_writer(app_id, filename):
-            with open("logs" + "/" + app_id + "/" + filename, "a+") as logfile:
-                log_data = build_log_data(params)
+            logfile_path = os.path.join(self.LOGS_FOLDER, app_id, filename)
+
+            with open(logfile_path, "a+") as logfile:
+                log_data = self.__build_log_data(params)
                 logfile.write(log_data)
 
-        return (sock, "OK")
+        return "Success."
 
     def run(self):
         while True:
             write_operation: tuple[socket, dict] = self._operation_q.get()
 
-            if write_operation is self.SENTINEL:
-                break
+            if write_operation is self.SENTINEL: break # noqa
 
-            result = self.__process_operation(write_operation)
+            (sock, params) = write_operation
 
-            self._result_q.put(result)
+            result = self.__process_operation(params)
+
+            self._result_q.put((sock, result))
 
     def stop(self):
         self._alive.value = False

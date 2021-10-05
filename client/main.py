@@ -19,13 +19,12 @@ MSG_SEP = "/"
 def build_read_msg(app_id):
     date1 = datetime(year=2021, month=10, day=4, hour=4, minute=30).isoformat()
     date2 = datetime(year=2021, month=10, day=4, hour=7, minute=30).isoformat()
-    print(f"Asking for logs between {date1} and {date2}")
     return {
         "app_id": app_id or "testing_app_id",
-        "from": date1,
-        "to": date2,
-        "tag": "falopini",
-        "pattern": "",
+        #"from": date1,
+        #"to": date2,
+        #"tag": "falopini",
+        "pattern": ".*None.*",
     }
 
 
@@ -44,8 +43,6 @@ def send_log_data(server_addr, port, log_data):
 
     send_msg(sock, log_data)
 
-    print("Waiting for response...")
-
     response = recv_msg(sock)
 
     sock.close()
@@ -61,7 +58,9 @@ def main(args) -> None:
     if args.read:
         log_msg = build_read_msg(app_id)
         result = send_log_data(server_addr, port + 1, log_msg)
-        print(f"result {result}")
+
+        if not args.profile:
+            print(f"result {result.get('result')}")
     else:
         dates = [
             datetime.now() + d * timedelta(minutes=15)
@@ -70,7 +69,10 @@ def main(args) -> None:
 
         for d in dates:
             log_msg = build_log_msg(d, app_id)
-            send_log_data(server_addr, port, log_msg)
+            result = send_log_data(server_addr, port, log_msg)
+
+            if not args.profile:
+                print(f"result {result}")
 
 
 class Timer:

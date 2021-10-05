@@ -6,47 +6,29 @@ from multiprocessing import Queue, Process
 from utils import recv_msg, logging
 
 
-def sanitize_data(data):
-    sanitized = {}
+class InvalidParams(RuntimeError):
+    pass
 
-    if data.get("app_id"):
-        sanitized["app_id"] = data.get("app_id")
-    if data.get("from"):
-        sanitized["from"] = datetime.datetime.fromisoformat(data.get("from"))
-    if data.get("to"):
-        sanitized["to"] = datetime.datetime.fromisoformat(data.get("to"))
-    if data.get("tag"):
-        sanitized["tag"] = data.get("tag")
-    if data.get("pattern"):
-        sanitized["pattern"] = data.get("app_id")
-    if data.get("timestamp"):
-        sanitized["timestamp"] = datetime.datetime.fromisoformat(
-            data.get("timestamp")
-        )
-    if data.get("tags"):
-        sanitized["tags"] = data.get("tags")
-
-    return sanitized
+class InvalidAppID(RuntimeError):
+    pass
 
 
-class _Router(Process):
+class Router(Process):
 
     SENTINEL = None
 
-    def __init__(self, pending_q, dispatch_qs):
+    def __init__(self, pending_q, dispatch_qs, fallback_queue):
         super().__init__()
 
         self._pending_q = pending_q
         self._dispatch_qs = dispatch_qs
+        self._fallback_q = fallback_queue
 
-    def __handle_conn(self, connection):
-        data = recv_msg(connection)
+    def _validate_params(self, data):
+        raise NotImplementedError()
 
-        logging.info(
-            f"[ROUTER][{os.getpid()}] got message from {data['app_id']}"
-        )
-
-        return sanitize_data(data)
+    def __ask_client_for_op(self, connection):
+        return recv_msg(connection)
 
     def __compute_dispatch_queue_index(self, app_id):
         return hash(app_id) % len(self._dispatch_qs)
@@ -57,11 +39,25 @@ class _Router(Process):
             if connection is self.SENTINEL:
                 break
 
-            operation = self.__handle_conn(connection)
+            operation_params = self.__ask_client_for_op(connection)
 
-            q_index = self.__compute_dispatch_queue_index(operation["app_id"])
+            logging.info(
+                f"[ROUTER][{os.getpid()}] got message from {operation_params['app_id']}"
+            )
 
-            self._dispatch_qs[q_index].put((connection, operation))
+            try:
+                operation_params = self._validate_params(operation_params)
+            except InvalidParams:
+                self._fallback_q.put((connection, 'One of the params is invalid.'))
+                continue
+
+            except InvalidAppID:
+                self._fallback_q.put((connection, "There're no logs for that app."))
+                continue
+
+            q_index = self.__compute_dispatch_queue_index(operation_params["app_id"])
+
+            self._dispatch_qs[q_index].put((connection, operation_params))
 
     def stop(self):
         self._pending_q.put(self.SENTINEL)
@@ -69,10 +65,10 @@ class _Router(Process):
 
 class RouterPool:
     def __init__(
-        self, size, pending_queue: Queue, dispatch_queues: list[Queue]
+        self, size, pending_queue: Queue, dispatch_queues: list[Queue], fallback_queue, router_class
     ):
         self._pool = [
-            _Router(pending_queue, dispatch_queues) for _ in range(size)
+            router_class(pending_queue, dispatch_queues, fallback_queue) for _ in range(size)
         ]
 
     def start(self):

@@ -13,7 +13,7 @@ class Acceptor(Process):
     will add a message in responser's queue.
     """
 
-    # If there're more than 100 items enqueued
+    # If there're more than THROTTLING_THRESHOLD items enqueued
     # start to throttling
     THROTTLING_THRESHOLD = 100
 
@@ -29,7 +29,10 @@ class Acceptor(Process):
         self._socket.listen(listen_backlog)
 
     def __handle_client_connection(self, client_sock):
-        self._dispatch_q.put(client_sock)
+        if self._dispatch_q.qsize() >= self.THROTTLING_THRESHOLD:
+            return self._fallback_q.put((client_sock, 'Server is not available now. Please try later.'))
+
+        return self._dispatch_q.put(client_sock)
 
     def __accept_new_connection(self):
         # Connection arrived
@@ -46,14 +49,12 @@ class Acceptor(Process):
                 self.__handle_client_connection(client_sock)
                 # Clean the previous connection as fast as we can
                 client_sock = None
-            except (Exception, OSError):
-                pass
+            except (Exception, OSError) as e:
+                logging.error(e)
 
     def stop(self):
-        # FIXME: shutdown
         try:
             self._socket.shutdown(SHUT_RDWR)
         except OSError:
             logging.error("Unable to shutdown socket")
         self._socket.close()
-        # self.terminate()

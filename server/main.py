@@ -3,37 +3,36 @@ import signal
 
 from multiprocessing import Queue, Manager
 
-from shared import Acceptor, RouterPool, AccessManager
-from reader import LogReader, RResponser
-from writer import LogWriter, WResponser
+from shared import Acceptor, AccessManager, ResponserPool
+from reader import LogReader, ReaderRouterPool
+from writer import LogWriter, WriterRouterPool
+from utils import logging
 
 
-# XXX: should be taken from environment
 SERVER_PORT = int(os.environ.get("SERVER_PORT"))
 SERVER_BACKLOG = int(os.environ.get("SERVER_LISTEN_BACKLOG"))
+FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 3))
+ROUTER_P_SIZE = int(os.environ.get("ROUTER_P_SIZE", 3))
+RESPONSER_P_SIZE = int(os.environ.get("RESPONSER_P_SIZE", 3))
 
-# TODO: bad name
-CONCURRENCY = int(os.environ.get("CONC", "1"))
-WORKERS = int(os.environ.get("WORKERS", 3))
 
-
-def start_reader_processes(server_port, access_managers):
+def start_reader_processes(access_managers):
     manager = Manager()
     router_q = manager.Queue()
     result_q = Queue()
 
-    readers_queues = [Queue() for _ in range(CONCURRENCY)]
+    readers_queues = [Queue() for _ in range(FILE_WORKERS)]
 
     readers_pool = [
         LogReader(q, result_q, am)
         for q, am in zip(readers_queues, access_managers)
     ]
 
-    acceptor = Acceptor(router_q, server_port, SERVER_BACKLOG, result_q)
+    acceptor = Acceptor(router_q, SERVER_PORT + 1, SERVER_BACKLOG, result_q)
 
-    router = RouterPool(WORKERS, router_q, readers_queues)
+    router = ReaderRouterPool(ROUTER_P_SIZE, router_q, readers_queues, result_q)
 
-    responser = RResponser(result_q)
+    responser = ResponserPool(RESPONSER_P_SIZE, result_q)
 
     acceptor.start()
     router.start()
@@ -46,22 +45,22 @@ def start_reader_processes(server_port, access_managers):
     return [acceptor, router, responser] + readers_pool
 
 
-def start_writer_processes(server_port, access_managers):
+def start_writer_processes(access_managers):
     manager = Manager()
     router_q = manager.Queue()
     result_q = Queue()
 
-    writers_queues = [Queue() for _ in range(CONCURRENCY)]
+    writers_queues = [Queue() for _ in range(FILE_WORKERS)]
 
-    acceptor = Acceptor(router_q, server_port, SERVER_BACKLOG, result_q)
-    router = RouterPool(WORKERS, router_q, writers_queues)
+    acceptor = Acceptor(router_q, SERVER_PORT, SERVER_BACKLOG, result_q)
+    router = WriterRouterPool(ROUTER_P_SIZE, router_q, writers_queues, result_q)
 
     writers_pool = [
         LogWriter(q, result_q, am)
         for q, am in zip(writers_queues, access_managers)
     ]
 
-    responser = WResponser(result_q)
+    responser = ResponserPool(RESPONSER_P_SIZE, result_q)
 
     acceptor.start()
     router.start()
@@ -80,11 +79,18 @@ def shutdown(processes):
         p.join()
 
 
-def main(server_port):
-    access_managers = [AccessManager() for _ in range(CONCURRENCY)]
+def main():
+    access_managers = [AccessManager() for _ in range(FILE_WORKERS)]
 
-    writer_processes = start_writer_processes(server_port, access_managers)
-    reader_processes = start_reader_processes(server_port + 1, access_managers)
+    writer_processes = start_writer_processes(access_managers)
+    reader_processes = start_reader_processes(access_managers)
+
+    logging.info((
+        f"Started server, listening in port {SERVER_PORT} "
+        f"using {FILE_WORKERS} as WORKERS for reading/writing "
+        f"using {ROUTER_P_SIZE} as ROUTERS "
+        f"using {RESPONSER_P_SIZE} as RESPONSERS "
+    ))
 
     signal.signal(
         signal.SIGTERM, lambda: shutdown(writer_processes + reader_processes)
@@ -102,4 +108,4 @@ def main(server_port):
 
 
 if __name__ == "__main__":
-    main(SERVER_PORT)
+    main()

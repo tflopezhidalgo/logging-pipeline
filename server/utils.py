@@ -13,6 +13,10 @@ logging.basicConfig(
 )
 
 
+def build_filename(log_date):
+    return f"{log_date.date().isoformat()}-{log_date.hour:0>2}.log"
+
+
 def send_msg(sock, data):
     json_data = json.dumps(data)
     msg = f"{len(json_data)}{MSG_SEP}{json_data}"

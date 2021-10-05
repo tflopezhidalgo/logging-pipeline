@@ -4,14 +4,9 @@ import re
 from socket import socket
 from multiprocessing import Process, Queue
 
-from utils import logging
+from utils import logging, build_filename
 
 Result = tuple[socket, str]
-
-
-# TODO -> utils
-def build_filename(date):
-    return f"{date.date().isoformat()}-{date.hour:0>2}.log"
 
 
 class LogReader(Process):
@@ -50,7 +45,7 @@ class LogReader(Process):
     def __apply_filters_to_line(self, line, params):
         result = re.search(r"\[(.*)\]\[(.*)\].*$", line)
 
-        if params["from"] and params["to"]:
+        if params.get("from") and params.get("to"):
             from_date = f"{params.get('from')}"
             to_date = f"{params.get('to')}"
 
@@ -60,7 +55,7 @@ class LogReader(Process):
         else:
             matches_dates = True
 
-        if params["tag"]:
+        if params.get("tag"):
             tag_to_find = f"{params.get('tag')}"
             log_tags = result.groups() and result.groups()[1] or ""
 
@@ -68,7 +63,14 @@ class LogReader(Process):
         else:
             matches_tag = True
 
-        return matches_tag and matches_dates
+        if params.get("pattern"):
+            pattern = params["pattern"]
+            pattern = re.compile(pattern)
+            matches_pattern = bool(pattern.match(line))
+        else:
+            matches_pattern = True
+
+        return matches_tag and matches_dates and matches_pattern
 
     def _get_filenames_to_read(self, params):
         app_id = params.get("app_id")
@@ -100,6 +102,9 @@ class LogReader(Process):
 
         data = []
         for logfile in logs:
+
+            logging.info(f"Reading {logfile}")
+
             filepath = os.path.join("logs", app_id, logfile)
 
             with self._access_manager.get_lock_for_reader(app_id, logfile):
