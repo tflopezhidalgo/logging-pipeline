@@ -9,12 +9,10 @@ Result = tuple[socket, str]
 
 
 class LogWriter(Process):
-    """
-    Handles opening and closing file-related operations.
-    """
-
     SENTINEL = None
     LOGS_FOLDER = "logs"
+    SUCEEDED_MSG = "Success"
+    FAILED_MSG = "Failed to write logs"
 
     def __init__(
         self, operation_q: Queue, result_q: "Queue[Result]", access_control_mgr
@@ -32,11 +30,7 @@ class LogWriter(Process):
 
         return f"[{timestamp}][{tags}] {message}\n"
 
-    def __process_operation(self, params):
-        filename = build_filename(params.get("timestamp"))
-
-        app_id = params.get("app_id")
-
+    def __ensure_app_id_folder_exists(self, app_id):
         available_folders = os.listdir(".")
 
         if self.LOGS_FOLDER not in available_folders:
@@ -47,6 +41,13 @@ class LogWriter(Process):
         if app_id not in available_folders:
             os.mkdir(os.path.join(self.LOGS_FOLDER, app_id))
 
+    def __process_operation(self, params):
+        filename = build_filename(params.get("timestamp"))
+
+        app_id = params.get("app_id")
+
+        self.__ensure_app_id_folder_exists(app_id)
+
         with self._access_control_mgr.get_lock_for_writer(app_id, filename):
             logfile_path = os.path.join(self.LOGS_FOLDER, app_id, filename)
 
@@ -54,7 +55,7 @@ class LogWriter(Process):
                 log_data = self.__build_log_data(params)
                 logfile.write(log_data)
 
-        return "Success."
+        return self.SUCEEDED_MSG
 
     def run(self):
         while True:
@@ -66,10 +67,11 @@ class LogWriter(Process):
             (sock, params) = write_operation
 
             try:
+                logging.info(f"Found write operation with params = {params}")
                 result = self.__process_operation(params)
             except Exception as e:
                 logging.error(e)
-                result = "Failed to write logs."
+                result = self.FAILED_MSG
 
             self._result_q.put((sock, result))
 

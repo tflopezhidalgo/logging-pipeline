@@ -28,7 +28,9 @@ MESSAGES = [
 ]
 
 
-def build_read_msg(current_date, app_id, tag=None, to=None, from_=None, pattern=None):
+def build_read_msg(
+    current_date, app_id, tag=None, to=None, from_=None, pattern=None
+):
     read_msg = {"app_id": app_id or "testing_app_id"}
 
     if to:
@@ -85,27 +87,37 @@ def main(args) -> None:
             to = now + timedelta(hours=1)
             from_ = now + timedelta(hours=5)
 
-        log_msg = build_read_msg(now, app_id, to=to, from_=from_, tag=args.tag, pattern=args.pattern)
+        log_msg = build_read_msg(
+            now, app_id, to=to, from_=from_, tag=args.tag, pattern=args.pattern
+        )
 
         if args.invalid_params:
-            log_msg['app_id'] = ''
+            log_msg["app_id"] = ""
 
         result = send_log_data(server_addr, port + 1, log_msg)
 
         if not args.profile:
-            print(f"Aplication ID = {app_id} Result: \n {result.get('result')}")
+            print(
+                f"Aplication ID = {app_id} Result: \n {result.get('result')}"
+            )
     else:
-        dates = [
-            now + d * timedelta(minutes=10)
-            for d in range(SAMPLE_SIZE)
-        ]
+        dates = [now + d * timedelta(minutes=10) for d in range(SAMPLE_SIZE)]
+
+        if args.no_timestamp:
+            dates = [dates[0]]
 
         for d in dates:
             log_msg = build_log_msg(d, app_id)
+
+            if args.no_timestamp:
+                log_msg.pop("timestamp")
+
             result = send_log_data(server_addr, port, log_msg)
 
             if not args.profile:
-                print(f"Application ID = {app_id} Result: \n {result.get('result')}")
+                print(
+                    f"Application ID = {app_id} Result: \n {result.get('result')}"
+                )
 
 
 class Timer:
@@ -141,17 +153,22 @@ if __name__ == "__main__":
     parser.add_argument(
         "--app", required=True, type=str, help="Application's id"
     )
+    parser.add_argument("--tag", type=str, help="Tag to search for")
+    parser.add_argument("--pattern", type=str, help="Pattern to search for")
     parser.add_argument(
-        "--tag", type=str, help="Tag to search for"
+        "--filter-dates",
+        action="store_true",
+        help="filter between two fixed dates",
     )
     parser.add_argument(
-        "--pattern", type=str, help="Pattern to search for"
+        "--invalid-params",
+        action="store_true",
+        help="Add invalid param to filter",
     )
     parser.add_argument(
-        "--filter-dates", action="store_true", help="filter between two fixed dates"
-    )
-    parser.add_argument(
-        "--invalid-params", action="store_true", help="Add invalid param to filter"
+        "--no-timestamp",
+        action="store_true",
+        help="Add invalid param to filter",
     )
     args = parser.parse_args()
 
@@ -161,4 +178,8 @@ if __name__ == "__main__":
         main(args)
 
     if args.profile:
-        print(f"[{args.app}] Time elapsed: %s secs." % (timer.get_elapsed()))
+        type = "reader" if args.read else "writer"
+        print(
+            f"[{type}][{args.app}] Time elapsed: %s secs."
+            % (timer.get_elapsed())
+        )

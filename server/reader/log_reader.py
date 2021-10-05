@@ -10,11 +10,8 @@ Result = tuple[socket, str]
 
 
 class LogReader(Process):
-    """
-    Handles opening and closing file-related operations.
-    """
-
     SENTINEL = (None, None)
+    LOGS_FOLDER = "logs"
 
     def __init__(
         self, operation_q: Queue, result_q: "Queue[Result]", access_manager
@@ -100,9 +97,7 @@ class LogReader(Process):
         data = []
         for logfile in logs:
 
-            logging.info(f"Reading {logfile}")
-
-            filepath = os.path.join("logs", app_id, logfile)
+            filepath = os.path.join(self.LOGS_FOLDER, app_id, logfile)
 
             with self._access_manager.get_lock_for_reader(app_id, logfile):
                 if not os.path.isfile(filepath):
@@ -129,6 +124,9 @@ class LogReader(Process):
                 break  # noqa
 
             try:
+                logging.info(
+                    f"Found read operation with params {operation_params}"
+                )
                 result = self.__perform_operation(operation_params)
             except Exception as e:
                 logging.error(e)

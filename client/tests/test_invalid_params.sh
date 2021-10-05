@@ -1,14 +1,14 @@
 echo 'Starting test...'
 
-# run processes and store pids in array
-for i in {1..2}; do
-    python3 ./main.py --invalid-params --read --app $i &
-    pids[${i}]=$!
-done
+INVALID_APP_ID='inexistent_app_id'
 
-# wait for all pids
-for pid in ${pids[*]}; do
-    wait $pid
-done
+echo "Sending read request with app_id=$INVALID_APP_ID to server"
+
+# run processes and store pids in array
+python3 ./main.py --invalid-params --read --app $INVALID_APP_ID
+
+echo "Sending write request without timestamp to server"
+
+python3 ./main.py --no-timestamp --app 1
 
 echo  'Finished'

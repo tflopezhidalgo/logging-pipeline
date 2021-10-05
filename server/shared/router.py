@@ -1,5 +1,3 @@
-import os
-
 from multiprocessing import Queue, Process
 
 from utils import recv_msg, logging
@@ -7,6 +5,7 @@ from utils import recv_msg, logging
 
 class InvalidParams(RuntimeError):
     pass
+
 
 class InvalidAppID(RuntimeError):
     pass
@@ -38,23 +37,31 @@ class Router(Process):
             if connection is self.SENTINEL:
                 break
 
-            operation_params = self.__ask_client_for_op(connection)
-
-            logging.info(
-                f"[ROUTER][{os.getpid()}] got message from {operation_params['app_id']}"
-            )
-
             try:
+                operation_params = self.__ask_client_for_op(connection)
                 operation_params = self._validate_params(operation_params)
             except InvalidParams:
-                self._fallback_q.put((connection, 'One of the params is invalid.'))
+                self._fallback_q.put(
+                    (connection, "One of the params is invalid.")
+                )
                 continue
-
             except InvalidAppID:
-                self._fallback_q.put((connection, "There're no logs for that app."))
+                self._fallback_q.put(
+                    (connection, "There're no logs for that app.")
+                )
+                continue
+            except (Exception, OSError) as e:
+                logging.error(f"Router failed to establish connection {e}")
+                self._fallback_q.put(
+                    (connection, "Failed to establish connection.")
+                )
                 continue
 
-            q_index = self.__compute_dispatch_queue_index(operation_params["app_id"])
+            q_index = self.__compute_dispatch_queue_index(
+                operation_params["app_id"]
+            )
+
+            logging.info(f"Routing message to queue {q_index}")
 
             self._dispatch_qs[q_index].put((connection, operation_params))
 
@@ -64,10 +71,16 @@ class Router(Process):
 
 class RouterPool:
     def __init__(
-        self, size, pending_queue: Queue, dispatch_queues: list[Queue], fallback_queue, router_class
+        self,
+        size,
+        pending_queue: Queue,
+        dispatch_queues: list[Queue],
+        fallback_queue,
+        router_class,
     ):
         self._pool = [
-            router_class(pending_queue, dispatch_queues, fallback_queue) for _ in range(size)
+            router_class(pending_queue, dispatch_queues, fallback_queue)
+            for _ in range(size)
         ]
 
     def start(self):

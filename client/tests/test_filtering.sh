@@ -25,7 +25,7 @@ for pid in ${pids[*]}; do
     wait $pid
 done
 
-echo "---------- Now filtering by tags... -------------"
+echo "---------- Now filtering by tag = 'test' -------------"
 
 for i in {1..2}; do
     python3 ./main.py --tag test --read --app $i  &
@@ -37,10 +37,10 @@ for pid in ${pids[*]}; do
     wait $pid
 done
 
-echo "---------- Now filtering by pattern... -------------"
+echo "---------- Now filtering by pattern = '.*\[info\].*' -------------"
 
 for i in {1..2}; do
-    python3 ./main.py --pattern '.*[info].*' --read --app $i  &
+    python3 ./main.py --pattern '.*\[info\].*' --read --app $i  &
     pids[${i}]=$!
 done
 
