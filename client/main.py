@@ -80,26 +80,35 @@ def main(args) -> None:
     now = datetime(year=2021, month=10, day=5)
 
     if args.read:
-        to = None
-        from_ = None
 
-        if args.filter_dates:
-            to = now + timedelta(hours=1)
-            from_ = now + timedelta(hours=5)
+        repeat_for = SAMPLE_SIZE if args.repeat else 1
 
-        log_msg = build_read_msg(
-            now, app_id, to=to, from_=from_, tag=args.tag, pattern=args.pattern
-        )
+        for i in range(repeat_for):
+            to = None
+            from_ = None
 
-        if args.invalid_params:
-            log_msg["app_id"] = ""
+            if args.filter_dates:
+                to = now + timedelta(hours=1)
+                from_ = now + timedelta(hours=5)
 
-        result = send_log_data(server_addr, port + 1, log_msg)
-
-        if not args.profile:
-            print(
-                f"Aplication ID = {app_id} Result: \n {result.get('result')}"
+            log_msg = build_read_msg(
+                now,
+                app_id,
+                to=to,
+                from_=from_,
+                tag=args.tag,
+                pattern=args.pattern,
             )
+
+            if args.invalid_params:
+                log_msg["app_id"] = ""
+
+            result = send_log_data(server_addr, port + 1, log_msg)
+
+            if not args.profile:
+                print(
+                    f"Aplication ID = {app_id} Result: \n {result.get('result')}"
+                )
     else:
         dates = [now + d * timedelta(minutes=10) for d in range(SAMPLE_SIZE)]
 
@@ -170,6 +179,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Add invalid param to filter",
     )
+    parser.add_argument(
+        "--repeat",
+        action="store_true",
+        help="Add invalid param to filter",
+    )
+
     args = parser.parse_args()
 
     timer = Timer()

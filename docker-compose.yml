@@ -14,11 +14,11 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONHASHSEED=0
       - SERVER_PORT=12345
-      - SERVER_LISTEN_BACKLOG=100
+      - SERVER_LISTEN_BACKLOG=500
       - LOGGING_LEVEL=DEBUG
-      - FILE_WORKERS=10
-      - ROUTER_P_SIZE=1
-      - RESPONSER_P_SIZE=1
+      - FILE_WORKERS=20
+      - ROUTER_P_SIZE=20
+      - RESPONSER_P_SIZE=20
     networks:
       - logging_pipeline_net
   client:
