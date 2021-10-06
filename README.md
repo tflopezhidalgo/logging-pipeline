@@ -8,11 +8,10 @@ Mensajes desde el cliente:
 Clientes envian JSON:
 
  Para agregar logs
- 
+
  ```json
  {
-     "operation": "append",
-     "app": "msteams",
+     "app_id": "msteams",
      "message": "this is a test log",
      "tags": ["testing", "python"],
      "timestamp": "2021-09-26"
@@ -23,8 +22,7 @@ Clientes envian JSON:
 
  ```json
  {
-     "operation": "filter",
-     "app": "msteams",
+     "app_id": "msteams",
      "from": "2021-09-26",
      "to": "2021-09-26",
      "tag": "python",

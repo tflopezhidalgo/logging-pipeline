@@ -24,7 +24,7 @@ class _DummyLock:
 class AccessManager:
     """
     Responsible for handling in a succesful way the
-    reader and writer accesses to files.
+    read and write accesses to files.
     """
 
     def __init__(self):
