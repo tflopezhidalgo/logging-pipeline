@@ -12,6 +12,7 @@ Result = tuple[socket, str]
 class LogReader(Process):
     SENTINEL = (None, None)
     LOGS_FOLDER = "logs"
+    FAILED_MSG = "Failed to read files"
 
     def __init__(
         self, operation_q: Queue, result_q: "Queue[Result]", access_manager
@@ -130,7 +131,7 @@ class LogReader(Process):
                 result = self.__perform_operation(operation_params)
             except Exception as e:
                 logging.error(e)
-                result = "Failed to read files."
+                result = self.FAILED_MSG
 
             self._result_q.put((sock, result))
 

@@ -36,7 +36,13 @@ def recv_msg(sock):
         else:
             done = True
 
-    msg_size = int("".join(size_buf))
+    pending_bytes_to_recv = int("".join(size_buf))
 
-    msg_buf = sock.recv(msg_size)
+    msg_buf = b""
+
+    while pending_bytes_to_recv:
+        chunk = sock.recv(pending_bytes_to_recv)
+        pending_bytes_to_recv -= len(chunk)
+        msg_buf += chunk
+
     return json.loads(msg_buf.decode("utf8"))
