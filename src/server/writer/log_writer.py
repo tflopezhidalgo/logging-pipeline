@@ -3,7 +3,7 @@ import os
 from socket import socket
 from multiprocessing import Process, Queue
 
-from utils import build_filename, logging
+from src.common import build_filename, logging
 
 Result = tuple[socket, str]
 
@@ -15,7 +15,10 @@ class LogWriter(Process):
     FAILED_MSG = "Failed to write logs"
 
     def __init__(
-        self, operation_q: Queue, result_q: "Queue[Result]", access_control_mgr
+        self,
+        operation_q: Queue,
+        result_q: "Queue[Result]",
+        access_control_mgr,
     ):
         super().__init__()
 

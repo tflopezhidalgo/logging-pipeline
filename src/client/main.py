@@ -6,7 +6,7 @@ import random
 from datetime import datetime, timedelta
 from socket import socket, AF_INET, SOCK_STREAM
 
-from utils import send_msg, recv_msg
+from src.common import send_msg, recv_msg
 
 parser = argparse.ArgumentParser()
 

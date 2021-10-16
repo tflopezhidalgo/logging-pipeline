@@ -1,6 +1,6 @@
 from multiprocessing import Process
 
-from utils import logging, send_msg
+from src.common import logging, send_msg
 
 
 class _Responser(Process):

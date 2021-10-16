@@ -3,10 +3,10 @@ import signal
 
 from multiprocessing import Queue, Manager
 
-from shared import Acceptor, AccessManager, ResponserPool
-from reader import LogReader, ReaderRouterPool
-from writer import LogWriter, WriterRouterPool
-from utils import logging
+from src.server.shared import Acceptor, AccessManager, ResponserPool
+from src.server.reader import LogReader, ReaderRouterPool
+from src.server.writer import LogWriter, WriterRouterPool
+from src.common import logging
 
 
 SERVER_PORT = int(os.environ.get("SERVER_PORT"))
@@ -30,7 +30,9 @@ def start_reader_processes(access_managers):
 
     acceptor = Acceptor(router_q, SERVER_PORT + 1, SERVER_BACKLOG, result_q)
 
-    router = ReaderRouterPool(ROUTER_P_SIZE, router_q, readers_queues, result_q)
+    router = ReaderRouterPool(
+        ROUTER_P_SIZE, router_q, readers_queues, result_q
+    )
 
     responser = ResponserPool(RESPONSER_P_SIZE, result_q)
 
@@ -53,7 +55,9 @@ def start_writer_processes(access_managers):
     writers_queues = [Queue() for _ in range(FILE_WORKERS)]
 
     acceptor = Acceptor(router_q, SERVER_PORT, SERVER_BACKLOG, result_q)
-    router = WriterRouterPool(ROUTER_P_SIZE, router_q, writers_queues, result_q)
+    router = WriterRouterPool(
+        ROUTER_P_SIZE, router_q, writers_queues, result_q
+    )
 
     writers_pool = [
         LogWriter(q, result_q, am)
@@ -85,12 +89,14 @@ def main():
     writer_processes = start_writer_processes(access_managers)
     reader_processes = start_reader_processes(access_managers)
 
-    logging.info((
-        f"Started server, listening in port {SERVER_PORT} "
-        f"using {FILE_WORKERS} as WORKERS for reading/writing "
-        f"using {ROUTER_P_SIZE} as ROUTERS "
-        f"using {RESPONSER_P_SIZE} as RESPONSERS "
-    ))
+    logging.info(
+        (
+            f"Started server, listening in port {SERVER_PORT} "
+            f"using {FILE_WORKERS} as WORKERS for reading/writing "
+            f"using {ROUTER_P_SIZE} as ROUTERS "
+            f"using {RESPONSER_P_SIZE} as RESPONSERS "
+        )
+    )
 
     signal.signal(
         signal.SIGTERM, lambda: shutdown(writer_processes + reader_processes)

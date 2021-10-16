@@ -1,8 +1,7 @@
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from multiprocessing import Process, Value
 
-
-from utils import logging
+from src.common import logging
 
 
 class Acceptor(Process):
@@ -30,7 +29,12 @@ class Acceptor(Process):
 
     def __handle_client_connection(self, client_sock):
         if self._dispatch_q.qsize() >= self.THROTTLING_THRESHOLD:
-            return self._fallback_q.put((client_sock, 'Server is not available now. Please try later.'))
+            return self._fallback_q.put(
+                (
+                    client_sock,
+                    "Server is not available now. Please try later.",
+                )
+            )
 
         return self._dispatch_q.put(client_sock)
 

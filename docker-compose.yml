@@ -2,13 +2,14 @@ version: '3'
 
 services:
   server:
-    build: ./server
-    image: server:latest
+    image: python:3.9.7
     stdin_open: true
     tty: true
     container_name: server
+    working_dir: /
     volumes:
-      - "./server:/server"
+      - "./src:/src"
+    entrypoint: /src/server/entrypoint.sh
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
@@ -22,11 +23,12 @@ services:
     networks:
       - logging_pipeline_net
   client:
-    build: ./client
-    image: client:latest
+    image: python:3.9.7
     container_name: client
+    working_dir: /
     volumes:
-      - "./client:/client"
+      - "./src:/src"
+    entrypoint: /src/client/entrypoint.sh
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1

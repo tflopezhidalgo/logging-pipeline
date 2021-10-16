@@ -4,7 +4,7 @@ echo "---------- Now filtering by app id... -------------"
 
 # run processes and store pids in array
 for i in {1..2}; do
-    python3 ./main.py --read --app $i  &
+    python3 -m src.client.main --read --app $i  &
     pids[${i}]=$!
 done
 
@@ -16,7 +16,7 @@ done
 echo "---------- Now filtering by dates... -------------"
 
 for i in {1..2}; do
-    python3 ./main.py --filter-dates --read --app $i  &
+    python3 -m src.client.main --filter-dates --read --app $i  &
     pids[${i}]=$!
 done
 
@@ -28,7 +28,7 @@ done
 echo "---------- Now filtering by tag = 'test' -------------"
 
 for i in {1..2}; do
-    python3 ./main.py --tag test --read --app $i  &
+    python3 -m src.client.main --tag test --read --app $i  &
     pids[${i}]=$!
 done
 
@@ -40,7 +40,7 @@ done
 echo "---------- Now filtering by pattern = '.*\[info\].*' -------------"
 
 for i in {1..2}; do
-    python3 ./main.py --pattern '.*\[info\].*' --read --app $i  &
+    python3 -m src.client.main --pattern '.*\[info\].*' --read --app $i  &
     pids[${i}]=$!
 done
 

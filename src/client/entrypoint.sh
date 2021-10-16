@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TEST_FILE="./tests/test_$TEST.sh"
+TEST_FILE="src/client/tests/test_$TEST.sh"
 
 if [[ -f $TEST_FILE ]]; then
     echo "Running '$TEST' tests..."
@@ -11,5 +11,4 @@ else
     for test in $(ls -l tests | grep -o '\w*.sh'); do
         echo '-' $test
     done
-
 fi

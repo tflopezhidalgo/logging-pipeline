@@ -4,7 +4,7 @@ import re
 from socket import socket
 from multiprocessing import Process, Queue
 
-from utils import logging, build_filename
+from src.common import logging, build_filename
 
 Result = tuple[socket, str]
 

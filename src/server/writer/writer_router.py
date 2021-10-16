@@ -1,10 +1,9 @@
 import datetime
 
-from shared import RouterPool, Router, InvalidParams
+from src.server.shared import RouterPool, Router, InvalidParams
 
 
 class WriterRouter(Router):
-
     def _validate_params(self, params):
         sanitized = {}
 
@@ -21,7 +20,9 @@ class WriterRouter(Router):
         if not params.get("timestamp"):
             raise InvalidParams()
 
-        sanitized["timestamp"] = datetime.datetime.fromisoformat(params.get("timestamp"))
+        sanitized["timestamp"] = datetime.datetime.fromisoformat(
+            params.get("timestamp")
+        )
 
         if not params.get("message"):
             raise InvalidParams()

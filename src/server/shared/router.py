@@ -1,6 +1,6 @@
 from multiprocessing import Queue, Process
 
-from utils import recv_msg, logging
+from src.common import recv_msg, logging
 
 
 class InvalidParams(RuntimeError):
