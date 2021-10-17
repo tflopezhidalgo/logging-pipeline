@@ -6,38 +6,66 @@ from multiprocessing import Process
 from src.common import logging, build_filename, LogEntry
 
 
+class Filter:
+    def entry_matches_filter(self, log_entry):
+        raise NotImplementedError
+
+
+class DateIntervalFilter(Filter):
+    def __init__(self, from_date, to_date):
+        self._from = from_date
+        self._to = to_date
+
+    def entry_matches_filter(self, log_entry):
+        return log_entry.date >= self._from and log_entry.date <= self._to
+
+
+class TagFilter(Filter):
+    def __init__(self, tag):
+        self._tag = tag
+
+    def entry_matches_filter(self, log_entry):
+        return self._tag in log_entry.tags
+
+
+class PatternFilter(Filter):
+    def __init__(self, pattern):
+        self._pattern = pattern
+
+    def entry_matches_filter(self, log_entry):
+        pattern = re.compile(self._pattern)
+        return bool(pattern.match(log_entry.raw))
+
+
 class _LineFilter:
     def __init__(self, params):
-        self.params = params
+        self.filters = []
+
+        from_date = params.get("from")
+        to_date = params.get("to")
+
+        if from_date and to_date:
+            self.filters.append(DateIntervalFilter(from_date, to_date))
+
+        tag_to_find = params.get("tag")
+
+        if tag_to_find:
+            self.filters.append(TagFilter(tag_to_find))
+
+        pattern = params.get("pattern")
+
+        if pattern:
+            self.filters.append(PatternFilter(pattern))
 
     def line_matches_filters(self, line):
         log_entry = LogEntry.from_str(line)
 
-        if self.params.get("from") and self.params.get("to"):
-            from_date = self.params.get("from")
-            to_date = self.params.get("to")
-
-            matches_dates = (
-                log_entry.date >= from_date and log_entry.date <= to_date
+        return all(
+            map(
+                lambda filter: filter.entry_matches_filter(log_entry),
+                self.filters,
             )
-        else:
-            matches_dates = True
-
-        if self.params.get("tag"):
-            tag_to_find = f"{self.params.get('tag')}"
-
-            matches_tag = tag_to_find in log_entry.tags
-        else:
-            matches_tag = True
-
-        if self.params.get("pattern"):
-            pattern = self.params["pattern"]
-            pattern = re.compile(pattern)
-            matches_pattern = bool(pattern.match(log_entry.raw))
-        else:
-            matches_pattern = True
-
-        return matches_tag and matches_dates and matches_pattern
+        )
 
 
 class LogReader(Process):
