@@ -1,22 +1,54 @@
 import os
 import re
 
-from socket import socket
-from multiprocessing import Process, Queue
+from multiprocessing import Process
 
 from src.common import logging, build_filename
 
-Result = tuple[socket, str]
+
+class _LineFilter:
+    def __init__(self, params):
+        self.params = params
+
+    def line_matches_filters(self, line):
+        result = re.search(r"\[(.*)\]\[(.*)\].*$", line)
+
+        if self.params.get("from") and self.params.get("to"):
+            from_date = f"{self.params.get('from')}"
+            to_date = f"{self.params.get('to')}"
+
+            log_date = result.groups() and result.groups()[0] or ""
+
+            matches_dates = log_date >= from_date and log_date <= to_date
+        else:
+            matches_dates = True
+
+        if self.params.get("tag"):
+            tag_to_find = f"{self.params.get('tag')}"
+            log_tags = result.groups() and result.groups()[1] or ""
+
+            matches_tag = log_tags.find(tag_to_find) != -1
+        else:
+            matches_tag = True
+
+        if self.params.get("pattern"):
+            pattern = self.params["pattern"]
+            pattern = re.compile(pattern)
+            matches_pattern = bool(pattern.match(line))
+        else:
+            matches_pattern = True
+
+        return matches_tag and matches_dates and matches_pattern
 
 
 class LogReader(Process):
     SENTINEL = (None, None)
     LOGS_FOLDER = "logs"
+    BASE_PATH = "/"
     FAILED_MSG = "Failed to read files"
+    FILE_OPENING_MODE = "r"
 
-    def __init__(
-        self, operation_q: Queue, result_q: "Queue[Result]", access_manager
-    ):
+    def __init__(self, operation_q, result_q, access_manager):
         super().__init__()
 
         self._operation_q = operation_q
@@ -37,43 +69,13 @@ class LogReader(Process):
         )
         return filtered
 
-    def __apply_filters_to_line(self, line, params):
-        result = re.search(r"\[(.*)\]\[(.*)\].*$", line)
-
-        if params.get("from") and params.get("to"):
-            from_date = f"{params.get('from')}"
-            to_date = f"{params.get('to')}"
-
-            log_date = result.groups() and result.groups()[0] or ""
-
-            matches_dates = log_date >= from_date and log_date <= to_date
-        else:
-            matches_dates = True
-
-        if params.get("tag"):
-            tag_to_find = f"{params.get('tag')}"
-            log_tags = result.groups() and result.groups()[1] or ""
-
-            matches_tag = log_tags.find(tag_to_find) != -1
-        else:
-            matches_tag = True
-
-        if params.get("pattern"):
-            pattern = params["pattern"]
-            pattern = re.compile(pattern)
-            matches_pattern = bool(pattern.match(line))
-        else:
-            matches_pattern = True
-
-        return matches_tag and matches_dates and matches_pattern
-
-    def _get_filenames_to_read(self, params):
+    def __get_filenames_to_read(self, params):
         app_id = params.get("app_id")
 
-        logs_path = os.path.join("./logs", app_id)
+        logs_path = os.path.join(self.BASE_PATH, self.LOGS_FOLDER, app_id)
 
         if not os.path.exists(logs_path):
-            logging.error(f"No existe log {logs_path}")
+            logging.error(f"There is no log folder for app = {app_id}")
             return []
 
         logs = os.listdir(logs_path)
@@ -91,29 +93,25 @@ class LogReader(Process):
         return logs
 
     def __perform_operation(self, params):
-        logs = list(self._get_filenames_to_read(params))
+        app_id = params["app_id"]
 
-        app_id = params.get("app_id")
+        line_filter = _LineFilter(params)
 
         data = []
-        for logfile in logs:
 
-            filepath = os.path.join(self.LOGS_FOLDER, app_id, logfile)
+        for logfile in self.__get_filenames_to_read(params):
+            filepath = os.path.join(
+                self.BASE_PATH, self.LOGS_FOLDER, app_id, logfile
+            )
 
             with self._access_manager.get_lock_for_reader(app_id, logfile):
-                if not os.path.isfile(filepath):
-                    continue
-
-                with open(filepath, "r") as logfile:
-                    content = list(
+                with open(filepath, self.FILE_OPENING_MODE) as logfile:
+                    data += list(
                         filter(
-                            lambda line: self.__apply_filters_to_line(
-                                line, params
-                            ),
+                            line_filter.line_matches_filters,
                             logfile,
                         )
                     )
-                    data += content
 
         return "".join(data)
 

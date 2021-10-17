@@ -2,10 +2,10 @@ echo 'Starting test...'
 
 # run processes and store pids in array
 for i in {1..10}; do
-    python3 -m src.client.main  --app $i  &
+    python3 -m src.client.main --profile --app $i  &
     pids[${i}]=$!
 
-    python3 -m src.client.main  --repeat --read --app $i  &
+    python3 -m src.client.main --profile --repeat --read --app $i  &
     xpids[${i}]=$!
 done
 

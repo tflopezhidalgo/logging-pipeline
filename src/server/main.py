@@ -9,11 +9,11 @@ from src.server.writer import LogWriter, WriterRouterPool
 from src.common import logging
 
 
-SERVER_PORT = int(os.environ.get("SERVER_PORT"))
-SERVER_BACKLOG = int(os.environ.get("SERVER_LISTEN_BACKLOG"))
-FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 3))
-ROUTER_P_SIZE = int(os.environ.get("ROUTER_P_SIZE", 3))
-RESPONSER_P_SIZE = int(os.environ.get("RESPONSER_P_SIZE", 3))
+SERVER_PORT = int(os.environ.get("SERVER_PORT"))  # type: ignore
+SERVER_BACKLOG = int(os.environ.get("SERVER_LISTEN_BACKLOG"))  # type: ignore
+FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 3))  # type: ignore
+ROUTER_P_SIZE = int(os.environ.get("ROUTER_P_SIZE", 3))  # type: ignore
+RESPONSER_P_SIZE = int(os.environ.get("RESPONSER_P_SIZE", 3))  # type: ignore
 
 
 def start_reader_processes(access_managers):

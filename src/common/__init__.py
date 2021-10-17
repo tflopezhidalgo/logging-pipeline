@@ -2,6 +2,7 @@ import os
 import json
 import logging
 
+from .log_entry import LogEntry  # noqa
 
 MSG_SEP = "/"
 LOGGING_LEVEL = os.environ.get("LOGGING_LEVEL", "INFO")
