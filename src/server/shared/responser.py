@@ -1,6 +1,6 @@
 from multiprocessing import Process
 
-from src.common import logging, send_msg
+from src.common import logging
 
 
 class _Responser(Process):
@@ -17,7 +17,7 @@ class _Responser(Process):
             conn_result = self._incoming_q.get()
 
             if conn_result == self.SENTINEL:
-                break
+                break  # noqa
 
             (sock, result) = conn_result
             try:
@@ -25,7 +25,7 @@ class _Responser(Process):
                     f"Responding to {sock.getpeername()} with {result}"
                 )
 
-                send_msg(sock, {"result": result})
+                sock.send_msg({"result": result})
 
             except (Exception, OSError) as e:
                 logging.info(f"Failed to send result to client {e}")

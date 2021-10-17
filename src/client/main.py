@@ -4,9 +4,8 @@ import argparse
 import random
 
 from datetime import datetime, timedelta
-from socket import socket, AF_INET, SOCK_STREAM
 
-from src.common import send_msg, recv_msg
+from src.common import SocketWrapper
 
 parser = argparse.ArgumentParser()
 
@@ -60,12 +59,12 @@ def build_log_msg(current_date, app_id):
 
 
 def send_log_data(server_addr, port, log_data):
-    sock = socket(AF_INET, SOCK_STREAM)
+    sock = SocketWrapper()
     sock.connect((server_addr, port))
 
-    send_msg(sock, log_data)
+    sock.send_msg(log_data)
 
-    response = recv_msg(sock)
+    response = sock.recv_msg()
 
     sock.close()
 

@@ -1,7 +1,6 @@
-from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from multiprocessing import Process, Value
 
-from src.common import logging, send_msg
+from src.common import logging, SocketWrapper
 
 
 class Acceptor(Process):
@@ -22,19 +21,17 @@ class Acceptor(Process):
         self._alive = Value("b", False)
         self._dispatch_q = dispatch_queue
 
-        self._socket = socket(AF_INET, SOCK_STREAM)
-        self._socket.bind(("0.0.0.0", port))
-        self._socket.listen(listen_backlog)
+        self._socket = SocketWrapper()
+        self._socket.bind_and_listen(port, listen_backlog)
 
     def __handle_client_connection(self, client_sock):
         if self._dispatch_q.qsize() >= self.THROTTLING_THRESHOLD:
-            send_msg(
-                client_sock,
+            client_sock.send_msg(
                 {
                     "result": (
                         "Server is not available now. Please try again later."
                     )
-                },
+                }
             )
             return client_sock.close()
 
@@ -60,7 +57,7 @@ class Acceptor(Process):
 
     def stop(self):
         try:
-            self._socket.shutdown(SHUT_RDWR)
+            self._socket.shutdown()
         except OSError:
             logging.error("Unable to shutdown socket")
         self._socket.close()

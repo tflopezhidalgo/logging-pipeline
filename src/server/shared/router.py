@@ -1,6 +1,6 @@
 from multiprocessing import Queue, Process
 
-from src.common import recv_msg, logging
+from src.common import logging
 
 
 class InvalidParams(RuntimeError):
@@ -26,7 +26,7 @@ class Router(Process):
         raise NotImplementedError()
 
     def __ask_client_for_op(self, connection):
-        return recv_msg(connection)
+        return connection.recv_msg()
 
     def __compute_dispatch_queue_index(self, app_id):
         return hash(app_id) % len(self._dispatch_qs)

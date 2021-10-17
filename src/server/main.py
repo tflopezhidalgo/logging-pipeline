@@ -84,31 +84,37 @@ def shutdown(processes):
 
 
 def main():
-    access_managers = [AccessManager() for _ in range(FILE_WORKERS)]
+    writer_processes, reader_processes = [], []
+    try:
+        access_managers = [AccessManager() for _ in range(FILE_WORKERS)]
 
-    writer_processes = start_writer_processes(access_managers)
-    reader_processes = start_reader_processes(access_managers)
+        writer_processes += start_writer_processes(access_managers)
+        reader_processes += start_reader_processes(access_managers)
 
-    logging.info(
-        f"Started server, listening in port {SERVER_PORT} "
-        f"using {FILE_WORKERS} as WORKERS for reading/writing "
-        f"using {ROUTER_P_SIZE} as ROUTERS "
-        f"using {RESPONSER_P_SIZE} as RESPONSERS "
-    )
+        logging.info(
+            f"Started server, listening in port {SERVER_PORT} "
+            f"using {FILE_WORKERS} as WORKERS for reading/writing "
+            f"using {ROUTER_P_SIZE} as ROUTERS "
+            f"using {RESPONSER_P_SIZE} as RESPONSERS "
+        )
 
-    signal.signal(
-        signal.SIGTERM, lambda: shutdown(writer_processes + reader_processes)
-    )
+        signal.signal(
+            signal.SIGTERM,
+            lambda: shutdown(writer_processes + reader_processes),
+        )
 
-    stop = False
-    while not stop:
-        try:
-            response = input()
-        except Exception:
-            response = None
-        stop = response == "q"
-
-    shutdown(writer_processes + reader_processes)
+        stop = False
+        while not stop:
+            try:
+                response = input()
+            except Exception:
+                response = None
+            stop = response == "q"
+    except Exception as e:
+        logging.error("Error initializing server processes [%s]" % e)
+        logging.error("Shutting down...")
+    finally:
+        shutdown(writer_processes + reader_processes)
 
 
 if __name__ == "__main__":
