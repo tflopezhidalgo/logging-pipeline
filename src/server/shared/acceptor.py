@@ -26,13 +26,23 @@ class Acceptor(Process):
 
     def __handle_client_connection(self, client_sock):
         if self._dispatch_q.qsize() >= self.THROTTLING_THRESHOLD:
-            client_sock.send_msg(
-                {
-                    "result": (
-                        "Server is not available now. Please try again later."
-                    )
-                }
-            )
+            try:
+                logging.info(
+                    f"Making client {client_sock.getpeername()} aware of"
+                    " throttling"
+                )
+                client_sock.send_msg(
+                    {
+                        "result": (
+                            "Server is not available now. Please try again"
+                            " later."
+                        )
+                    }
+                )
+            except Exception:
+                logging.error(
+                    "Failed to send message to client. Closing connection"
+                )
             return client_sock.close()
 
         return self._dispatch_q.put(client_sock)
