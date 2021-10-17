@@ -28,7 +28,7 @@ def start_reader_processes(access_managers):
         for q, am in zip(readers_queues, access_managers)
     ]
 
-    acceptor = Acceptor(router_q, SERVER_PORT + 1, SERVER_BACKLOG, result_q)
+    acceptor = Acceptor(router_q, SERVER_PORT + 1, SERVER_BACKLOG)
 
     router = ReaderRouterPool(
         ROUTER_P_SIZE, router_q, readers_queues, result_q
@@ -54,7 +54,7 @@ def start_writer_processes(access_managers):
 
     writers_queues = [Queue() for _ in range(FILE_WORKERS)]
 
-    acceptor = Acceptor(router_q, SERVER_PORT, SERVER_BACKLOG, result_q)
+    acceptor = Acceptor(router_q, SERVER_PORT, SERVER_BACKLOG)
     router = WriterRouterPool(
         ROUTER_P_SIZE, router_q, writers_queues, result_q
     )
@@ -90,12 +90,10 @@ def main():
     reader_processes = start_reader_processes(access_managers)
 
     logging.info(
-        (
-            f"Started server, listening in port {SERVER_PORT} "
-            f"using {FILE_WORKERS} as WORKERS for reading/writing "
-            f"using {ROUTER_P_SIZE} as ROUTERS "
-            f"using {RESPONSER_P_SIZE} as RESPONSERS "
-        )
+        f"Started server, listening in port {SERVER_PORT} "
+        f"using {FILE_WORKERS} as WORKERS for reading/writing "
+        f"using {ROUTER_P_SIZE} as ROUTERS "
+        f"using {RESPONSER_P_SIZE} as RESPONSERS "
     )
 
     signal.signal(

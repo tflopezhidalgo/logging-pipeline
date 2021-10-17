@@ -107,7 +107,8 @@ def main(args) -> None:
 
             if not args.profile:
                 print(
-                    f"Aplication ID = {app_id} Result: \n {result.get('result')}"
+                    f"Aplication ID = {app_id} Result: \n"
+                    f" {result.get('result')}"
                 )
     else:
         dates = [now + d * timedelta(minutes=10) for d in range(SAMPLE_SIZE)]
@@ -125,7 +126,8 @@ def main(args) -> None:
 
             if not args.profile:
                 print(
-                    f"Application ID = {app_id} Result: \n {result.get('result')}"
+                    f"Application ID = {app_id} Result: \n"
+                    f" {result.get('result')}"
                 )
 
 

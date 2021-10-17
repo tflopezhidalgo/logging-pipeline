@@ -1,7 +1,7 @@
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from multiprocessing import Process, Value
 
-from src.common import logging
+from src.common import logging, send_msg
 
 
 class Acceptor(Process):
@@ -16,12 +16,11 @@ class Acceptor(Process):
     # start to throttling
     THROTTLING_THRESHOLD = 100
 
-    def __init__(self, dispatch_queue, port, listen_backlog, fallback_queue):
+    def __init__(self, dispatch_queue, port, listen_backlog):
         super().__init__()
 
         self._alive = Value("b", False)
         self._dispatch_q = dispatch_queue
-        self._fallback_q = fallback_queue
 
         self._socket = socket(AF_INET, SOCK_STREAM)
         self._socket.bind(("0.0.0.0", port))
@@ -29,12 +28,15 @@ class Acceptor(Process):
 
     def __handle_client_connection(self, client_sock):
         if self._dispatch_q.qsize() >= self.THROTTLING_THRESHOLD:
-            return self._fallback_q.put(
-                (
-                    client_sock,
-                    "Server is not available now. Please try later.",
-                )
+            send_msg(
+                client_sock,
+                {
+                    "result": (
+                        "Server is not available now. Please try again later."
+                    )
+                },
             )
+            return client_sock.close()
 
         return self._dispatch_q.put(client_sock)
 

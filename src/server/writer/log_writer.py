@@ -6,6 +6,10 @@ from multiprocessing import Process
 from src.common import build_filename, logging, LogEntry
 
 
+class WriteError(RuntimeError):
+    pass
+
+
 class LogWriter(Process):
     SENTINEL = None
     LOGS_FOLDER = "logs"
@@ -51,9 +55,14 @@ class LogWriter(Process):
                 self.BASE_PATH, self.LOGS_FOLDER, app_id, filename
             )
 
-            with open(logfile_path, self.FILE_OPENING_MODE) as logfile:
-                log_data = self.__build_log_data(params)
-                logfile.write(log_data.to_str())
+            try:
+                with open(logfile_path, self.FILE_OPENING_MODE) as logfile:
+                    log_data = self.__build_log_data(params).to_str()
+
+                    if len(log_data) != logfile.write(log_data):
+                        raise WriteError()
+            except Exception:
+                raise WriteError()
 
         return self.SUCEEDED_MSG
 
@@ -67,9 +76,9 @@ class LogWriter(Process):
             (sock, params) = write_operation
 
             try:
-                # logging.info(f"Found write operation with params = {params}")
+                logging.info(f"Found write operation with params = {params}")
                 result = self.__process_operation(params)
-            except Exception as e:
+            except (WriteError, Exception) as e:
                 logging.error(e)
                 result = self.FAILED_MSG
 
