@@ -1,23 +1,30 @@
 import re
+import datetime
 
 
 class LogEntry:
 
-    LOG_STRUCTURE_REGEX = r"\[(.*)\]\[(.*)\].*$"
+    LOG_STRUCTURE_REGEX = r"\[(.*)\]\[(.*)\](.*)$"
 
     def __init__(self, date, tags, content):
         self._date = date
         self._tags = tags
         self._content = content
+        self._raw = self.to_str()
 
     @classmethod
-    def from_str(self, str):
-        result = re.search(self.LOG_STRUCTURE_REGEX, str)
+    def from_str(cls, str):
+        result = re.search(cls.LOG_STRUCTURE_REGEX, str)
 
         if not result.groups():
             raise RuntimeError("Log entry doesn't match expected structure")
 
-        self._date, self._tags, self._content = result
+        date, tags, content = result.groups()
+
+        date = datetime.datetime.fromisoformat(date)
+        tags = tags.split("|")
+
+        return cls(date, tags, content)
 
     def to_str(self):
         timestamp = self._date
@@ -37,3 +44,7 @@ class LogEntry:
     @property
     def content(self):
         return self._content
+
+    @property
+    def raw(self):
+        return self._raw

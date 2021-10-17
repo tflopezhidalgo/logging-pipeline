@@ -3,7 +3,7 @@ import re
 
 from multiprocessing import Process
 
-from src.common import logging, build_filename
+from src.common import logging, build_filename, LogEntry
 
 
 class _LineFilter:
@@ -11,30 +11,29 @@ class _LineFilter:
         self.params = params
 
     def line_matches_filters(self, line):
-        result = re.search(r"\[(.*)\]\[(.*)\].*$", line)
+        log_entry = LogEntry.from_str(line)
 
         if self.params.get("from") and self.params.get("to"):
-            from_date = f"{self.params.get('from')}"
-            to_date = f"{self.params.get('to')}"
+            from_date = self.params.get("from")
+            to_date = self.params.get("to")
 
-            log_date = result.groups() and result.groups()[0] or ""
-
-            matches_dates = log_date >= from_date and log_date <= to_date
+            matches_dates = (
+                log_entry.date >= from_date and log_entry.date <= to_date
+            )
         else:
             matches_dates = True
 
         if self.params.get("tag"):
             tag_to_find = f"{self.params.get('tag')}"
-            log_tags = result.groups() and result.groups()[1] or ""
 
-            matches_tag = log_tags.find(tag_to_find) != -1
+            matches_tag = tag_to_find in log_entry.tags
         else:
             matches_tag = True
 
         if self.params.get("pattern"):
             pattern = self.params["pattern"]
             pattern = re.compile(pattern)
-            matches_pattern = bool(pattern.match(line))
+            matches_pattern = bool(pattern.match(log_entry.raw))
         else:
             matches_pattern = True
 
