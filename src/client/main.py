@@ -62,9 +62,13 @@ def send_log_data(server_addr, port, log_data):
     sock = SocketWrapper()
     sock.connect((server_addr, port))
 
-    sock.send_msg(log_data)
+    if not sock.send_msg(log_data):
+        return sock.close()
 
     response = sock.recv_msg()
+
+    if response is None:
+        pass
 
     sock.close()
 

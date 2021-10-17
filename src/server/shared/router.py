@@ -26,7 +26,10 @@ class Router(Process):
         raise NotImplementedError()
 
     def __ask_client_for_op(self, connection):
-        return connection.recv_msg()
+        recvd = connection.recv_msg()
+        if recvd is None:
+            raise Exception()
+        return recvd
 
     def __compute_dispatch_queue_index(self, app_id):
         return hash(app_id) % len(self._dispatch_qs)
@@ -34,8 +37,9 @@ class Router(Process):
     def run(self):
         while True:
             connection = self._pending_q.get()
+
             if connection is self.SENTINEL:
-                break
+                break  # noqa
 
             try:
                 operation_params = self.__ask_client_for_op(connection)
@@ -52,9 +56,7 @@ class Router(Process):
                 continue
             except (Exception, OSError) as e:
                 logging.error(f"Router failed to establish connection {e}")
-                self._fallback_q.put(
-                    (connection, "Failed to establish connection.")
-                )
+                connection.close()
                 continue
 
             q_index = self.__compute_dispatch_queue_index(

@@ -20,18 +20,13 @@ class _Responser(Process):
                 break  # noqa
 
             (sock, result) = conn_result
-            try:
+            logging.info(f"Responding to {sock.getpeername()} with {result}")
+
+            if not sock.send_msg({"result": result}):
                 logging.info(
-                    f"Responding to {sock.getpeername()} with {result}"
+                    f"Failed to send result to client {sock.getpeername()}"
                 )
-
-                sock.send_msg({"result": result})
-
-            except (Exception, OSError) as e:
-                logging.info(f"Failed to send result to client {e}")
-
-            finally:
-                sock.close()
+            sock.close()
 
     def stop(self):
         self._incoming_q.put(self.SENTINEL)

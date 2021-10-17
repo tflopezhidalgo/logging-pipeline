@@ -30,46 +30,50 @@ class SocketWrapper:
         return SocketWrapper(sock=c), addr
 
     def send_msg(self, data):
-        json_data = json.dumps(data)
-        msg = f"{len(json_data)}{self.MSG_SEP}{json_data}"
-        msg = msg.encode("utf8")
-
-        return self._sock.sendall(msg)
+        try:
+            json_data = json.dumps(data)
+            msg = f"{len(json_data)}{self.MSG_SEP}{json_data}"
+            msg = msg.encode("utf8")
+            self._sock.sendall(msg)
+            return len(msg)
+        except (Exception, OSError):
+            return 0
 
     def recv_msg(self):
         size_buf = ""
         msg_buf = ""
 
-        def chunk_has_msg_sep(chunk):
-            return chunk.find(self.MSG_SEP) != -1
+        try:
 
-        done = False
-        while not done:
-            chunk = self._sock.recv(self.CHUNK_SIZE).decode()
+            def chunk_has_msg_sep(chunk):
+                return chunk.find(self.MSG_SEP) != -1
 
-            if chunk_has_msg_sep(chunk):
-                size_part, msg_part = chunk.split(self.MSG_SEP, 1)
-                done = True
-            else:
-                size_part, msg_part = chunk, ""
+            done = False
+            while not done:
+                chunk = self._sock.recv(self.CHUNK_SIZE).decode()
 
-            size_buf += size_part
-            msg_buf += msg_part
+                if chunk_has_msg_sep(chunk):
+                    size_part, msg_part = chunk.split(self.MSG_SEP, 1)
+                    done = True
+                else:
+                    size_part, msg_part = chunk, ""
 
-        pending_bytes_to_recv = int(size_buf) - len(msg_buf)
+                size_buf += size_part
+                msg_buf += msg_part
 
-        while pending_bytes_to_recv:
-            chunk = self._sock.recv(pending_bytes_to_recv).decode()
-            pending_bytes_to_recv -= len(chunk)
-            msg_buf += chunk
+            pending_bytes_to_recv = int(size_buf) - len(msg_buf)
 
-        return json.loads(msg_buf)
-
-    def shutdown(self):
-        return self._sock.shutdown(SHUT_RDWR)
+            while pending_bytes_to_recv:
+                chunk = self._sock.recv(pending_bytes_to_recv).decode()
+                pending_bytes_to_recv -= len(chunk)
+                msg_buf += chunk
+            return json.loads(msg_buf)
+        except (Exception, OSError):
+            return None
 
     def getpeername(self):
         return self._sock.getpeername()
 
     def close(self):
+        self._sock.shutdown(SHUT_RDWR)
         return self._sock.close()
