@@ -8,7 +8,7 @@ if [[ -f $TEST_FILE ]]; then
 else
     echo "Looks like there's no tests with that name"
     echo "Available tests:"
-    for test in $(ls -l tests | grep -o '\w*.sh'); do
+    for test in $(ls -l /src/client/tests | grep -o '\w*.sh'); do
         echo '-' $test
     done
 fi

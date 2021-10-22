@@ -7,6 +7,9 @@ _term() {
 
 trap _term SIGTERM
 
+# Make sure /logs exists
+mkdir -p /logs
+
 python3 -m src.server.main &
 
 child=$!
