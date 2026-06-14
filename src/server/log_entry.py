@@ -1,7 +1,6 @@
 import re
 import datetime
 
-
 class LogEntry:
 
     LOG_STRUCTURE_REGEX = r"\[(.*)\]\[(.*)\](.*)$"
@@ -16,7 +15,7 @@ class LogEntry:
     def from_str(cls, str):
         result = re.search(cls.LOG_STRUCTURE_REGEX, str)
 
-        if not result.groups():
+        if not (result and result.groups()):
             raise RuntimeError("Log entry doesn't match expected structure")
 
         date, tags, content = result.groups()

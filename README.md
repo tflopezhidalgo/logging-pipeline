@@ -1,24 +1,32 @@
-# Protocolo
+# Logging Pipeline.
 
-Mensajes desde el cliente:
+Implementado en Python.
 
- - Agregado de logs: Los clientes envían `AppId (string)`, `message (string)`, `logTags (lista)` y `timestamp (date)`.
- - Consulta de logs: Los clientes envían `AppId (string)`, `From, To (date)`, `tag (string)` y `pattern (string)`.
+Implementa un patron cliente-servidor para enviar y recibir logs desde clientes. El servidor opera en modo multi-thread para poder sopotar requests concurrentes y aun asi mantener un estado consistente de los logs.
 
-Clientes envian JSON:
 
- Para agregar logs
+## Development
+
+TBD.
+
+## Correr tests
+
+Formato de logs enviados desde el cliente.
+
+1. Emision de logs
 
  ```json
  {
      "app_id": "msteams",
-     "message": "this is a test log",
+     "message": "Hey, this app is running fine!",
      "tags": ["testing", "python"],
      "timestamp": "2021-09-26"
  }
  ```
 
- Para consulta
+2. Consulta de logs
+
+Formato `AppId (string)`, `From, To (date)`, `tag (string)` y `pattern (string)`.
 
  ```json
  {

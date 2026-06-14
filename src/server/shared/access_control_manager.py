@@ -1,11 +1,11 @@
-import multiprocessing
 import ctypes
+import multiprocessing
 
 
 class _DummyLock:
     """
     Fake lock given to those proccesses (mostly readers)
-    who don't need access in a process-safe way to files.
+    who don't need access in a concurrent-safe way to files.
     """
 
     def __enter__(self, *args, **kwargs):
@@ -23,8 +23,7 @@ class _DummyLock:
 
 class AccessManager:
     """
-    Responsible for handling in a succesful way the
-    read and write accesses to files.
+    Responsible for handling in a the read and write accesses to files.
     """
 
     def __init__(self):
@@ -39,7 +38,7 @@ class AccessManager:
         self.writer_file = manager.Value(ctypes.c_wchar_p, "None")
         self.writer_lck = multiprocessing.Lock()
 
-    def get_lock_for_writer(self, app_id, filename):
+    def writing_lock(self, app_id, filename):
         with self.lock:
 
             # si el reader esta leyendo el archivo que
@@ -57,7 +56,7 @@ class AccessManager:
 
             return self.writer_lck
 
-    def get_lock_for_reader(self, app_id, filename):
+    def reading_lock(self, app_id, filename):
         with self.lock:
 
             # si el writer esta escribiendo el archivo que necesitamos

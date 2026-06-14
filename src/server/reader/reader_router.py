@@ -7,6 +7,10 @@ LOGS_FOLDER = "/logs"
 
 
 class ReaderRouter(Router):
+    """
+    Router for the reader endpoint. It validates the parameters and returns the logs
+    """
+
     def _validate_params(self, params):
         sanitized = {}
 
@@ -47,5 +51,10 @@ class ReaderRouter(Router):
 
 
 class ReaderRouterPool(RouterPool):
+    """
+    ...
+
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(router_class=ReaderRouter, *args, **kwargs)

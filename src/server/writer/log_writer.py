@@ -1,16 +1,16 @@
 import os
+import socket
+import multiprocessing
 
-from socket import socket
-from multiprocessing import Process
-
-from src.common import build_filename, logging, LogEntry
+from src.common import build_filename, logging
+from ..log_entry import LogEntry
 
 
 class WriteError(RuntimeError):
     pass
 
 
-class LogWriter(Process):
+class LogWriter(multiprocessing.Process):
     SENTINEL = None
     LOGS_FOLDER = "logs"
     BASE_PATH = "/"
@@ -50,17 +50,20 @@ class LogWriter(Process):
 
         self.__ensure_app_id_folder_exists(app_id)
 
-        with self._access_control_mgr.get_lock_for_writer(app_id, filename):
+        with self._access_control_mgr.writing_lock(app_id, filename):
             logfile_path = os.path.join(
                 self.BASE_PATH, self.LOGS_FOLDER, app_id, filename
             )
 
             try:
                 with open(logfile_path, self.FILE_OPENING_MODE) as logfile:
+
+                    logging.info(f"Writing to file = {logfile_path}")
                     log_data = self.__build_log_data(params).to_str()
 
                     if len(log_data) != logfile.write(log_data):
                         raise WriteError()
+
             except Exception:
                 raise WriteError()
 
@@ -68,7 +71,7 @@ class LogWriter(Process):
 
     def run(self):
         while True:
-            write_operation: tuple[socket, dict] = self._operation_q.get()
+            write_operation: tuple[socket.socket, dict] = self._operation_q.get()
 
             if write_operation is self.SENTINEL:
                 break  # noqa
@@ -85,6 +88,5 @@ class LogWriter(Process):
             self._result_q.put((sock, result))
 
     def stop(self):
-        self._alive.value = False
         self._operation_q.put(self.SENTINEL)
         self.join()
