@@ -95,9 +95,12 @@ class LogReader(multiprocessing.Process):
     BASE_PATH = "/"
     FAILED_MSG = "Failed to read files"
     FILE_OPENING_MODE = "r"
+    NAME = 'log-reader'
 
     def __init__(self, operation_q, result_q, access_manager):
-        super().__init__()
+        super().__init__(name=self.NAME)
+
+        self.name = 'log-reader'
 
         self._operation_q = operation_q
         self._result_q = result_q
@@ -182,5 +185,7 @@ class LogReader(multiprocessing.Process):
             self._result_q.put((sock, result))
 
     def stop(self):
+        logging.info('Stopping worker: %s' % self.NAME)
+
         self._operation_q.put(self.SENTINEL)
         self.join()

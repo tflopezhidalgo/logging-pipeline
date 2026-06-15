@@ -48,7 +48,11 @@ class SocketWrapper:
 
             done = False
             while not done:
-                chunk = self._sock.recv(self.CHUNK_SIZE).decode()
+                chunk = ''
+                try:
+                    chunk = self._sock.recv(self.CHUNK_SIZE).decode()
+                except TimeoutError:
+                    pass
 
                 if chunk_has_msg_sep(chunk):
                     size_part, msg_part = chunk.split(self.MSG_SEP, 1)
@@ -73,5 +77,9 @@ class SocketWrapper:
         return self._sock.getpeername()
 
     def close(self):
-        self._sock.shutdown(socket.SHUT_RDWR)
-        return self._sock.close()
+        try:
+            self._sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        finally:
+            self._sock.close()

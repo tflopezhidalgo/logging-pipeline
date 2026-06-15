@@ -13,13 +13,14 @@ class WriteError(RuntimeError):
 class LogWriter(multiprocessing.Process):
     SENTINEL = None
     LOGS_FOLDER = "logs"
-    BASE_PATH = "/"
+    BASE_PATH = "/var/git/logging-pipeline/logs"
     SUCEEDED_MSG = "Success"
     FILE_OPENING_MODE = "a+"
     FAILED_MSG = "Failed to write logs"
+    NAME = 'log-writer'
 
     def __init__(self, operation_q, result_q, access_control_mgr):
-        super().__init__()
+        super().__init__(name=self.NAME)
 
         self._operation_q = operation_q
         self._result_q = result_q
@@ -88,5 +89,7 @@ class LogWriter(multiprocessing.Process):
             self._result_q.put((sock, result))
 
     def stop(self):
+        logging.info('Stopping worker: %s' % self.NAME)
+
         self._operation_q.put(self.SENTINEL)
         self.join()

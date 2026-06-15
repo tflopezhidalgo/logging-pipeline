@@ -1,13 +1,31 @@
 import os
 import time
 import argparse
+import random
 
-import logging_client
+from datetime import datetime, timedelta
+
+from .framework import logging_client
 
 parser = argparse.ArgumentParser()
 
 SERVER_ADDR = os.environ.get("CLI_SERVER_ADDRESS", "127.0.0.1")
-SERVER_PORT = int(os.environ.get("CLI_SERVER_WRITE_PORT", "8000"))
+SERVER_PORT = int(os.environ.get("CLI_SERVER_WRITE_PORT", "4310"))
+
+SAMPLE_SIZE = 50
+
+TAGS = ["error", "warning", "info", "debug", "unicorn"]
+
+MESSAGES = [
+    "Hey",
+    "random log!",
+    "this is not a log",
+    "why are we logging?",
+    "Yeah, that went fine. Nop",
+    "lorem ipsum?",
+    "The application has died.",
+]
+
 
 def main(args) -> None:
     port = SERVER_PORT
@@ -17,18 +35,33 @@ def main(args) -> None:
         port=port,
         server_addr=server_addr,
         app_id=args.app,
-        no_timestamp=args.no_timestamp
+        no_timestamp=args.no_timestamp,
+        profile=args.profile
         )
 
     if args.read:
-        c.read(
-            pattern=args.pattern,
-            tag=args.tag,
-            filter_dates=args.filter_dates,
-            repeat=args.repeat
-            )
+        repeat_for = SAMPLE_SIZE if args.repeat else 1
+
+        for _ in range(repeat_for):
+            c.read(
+                pattern=args.pattern,
+                tag=args.tag,
+                filter_dates=args.filter_dates,
+                )
     else:
-        c.write()
+        now = datetime(year=2021, month=10, day=5)
+
+        # Generate a list of timestamps to send.
+        dates = [now + d * timedelta(minutes=10) for d in range(SAMPLE_SIZE)]
+
+        if args.no_timestamp:
+            dates = [dates[0]]
+
+        for d in dates:
+            message = random.choice(MESSAGES)
+            tag = random.choice(TAGS)
+
+            c.write(d, message, tag)
 
 
 class Timer:

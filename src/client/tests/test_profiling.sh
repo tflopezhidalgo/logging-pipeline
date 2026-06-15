@@ -1,5 +1,3 @@
-sleep 5
-
 echo 'Starting test...'
 
 # run processes and store pids in array

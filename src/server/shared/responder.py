@@ -6,9 +6,10 @@ from src.common import logging
 class _Responder(multiprocessing.Process):
 
     SENTINEL = (None, None)
+    NAME = 'responder'
 
     def __init__(self, incoming_queue):
-        super().__init__()
+        super().__init__(name=self.NAME)
 
         self._incoming_q = incoming_queue
 
@@ -29,6 +30,8 @@ class _Responder(multiprocessing.Process):
             sock.close()
 
     def stop(self):
+        logging.info('Stopping worker: %s' % self.NAME)
+
         self._incoming_q.put(self.SENTINEL)
         self.join()
 
