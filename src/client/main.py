@@ -103,7 +103,7 @@ class Client:
 
         repeat_for = SAMPLE_SIZE if repeat else 1
 
-        for i in range(repeat_for):
+        for _ in range(repeat_for):
             (to, _from_) = (None, None)
 
             if filter_dates:

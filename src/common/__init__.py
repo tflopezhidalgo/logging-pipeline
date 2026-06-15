@@ -1,5 +1,5 @@
 from .logging import logging  # noqa
-from .socket_wrapper import SocketWrapper  # noqa
+from .network import SocketWrapper  # noqa
 
 
 def build_filename(log_date):
