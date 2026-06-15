@@ -1,17 +1,25 @@
 import os
 import re
+import multiprocessing
 
-from multiprocessing import Process
-
-from src.common import logging, build_filename, LogEntry
+from src.common import build_filename, logging
+from ..log_entry import LogEntry
 
 
 class Filter:
-    def entry_matches_filter(self, log_entry):
+    """
+    Base class for filters. Each filter should implement entry_matches_filter method
+    """
+
+    def entry_matches_filter(self, _):
         raise NotImplementedError
 
 
 class DateIntervalFilter(Filter):
+    """
+    Filter for log entries that checks if the date of the entry is between from and to dates
+    """
+
     def __init__(self, from_date, to_date):
         self._from = from_date
         self._to = to_date
@@ -21,6 +29,10 @@ class DateIntervalFilter(Filter):
 
 
 class TagFilter(Filter):
+    """
+    Filter for log entries that checks if the entry has the specified tag
+    """
+
     def __init__(self, tag):
         self._tag = tag
 
@@ -29,6 +41,10 @@ class TagFilter(Filter):
 
 
 class PatternFilter(Filter):
+    """
+    Filter for log entries that checks if the raw log entry matches the specified pattern (regex)
+    """
+
     def __init__(self, pattern):
         self._pattern = pattern
 
@@ -38,6 +54,10 @@ class PatternFilter(Filter):
 
 
 class _LineFilter:
+    """
+
+    """
+
     def __init__(self, params):
         self.filters = []
 
@@ -58,17 +78,18 @@ class _LineFilter:
             self.filters.append(PatternFilter(pattern))
 
     def line_matches_filters(self, line):
-        log_entry = LogEntry.from_str(line)
+        entry = LogEntry.from_str(line)
 
         return all(
             map(
-                lambda filter: filter.entry_matches_filter(log_entry),
+                lambda f: f.entry_matches_filter(entry),
                 self.filters,
             )
         )
 
 
-class LogReader(Process):
+class LogReader(multiprocessing.Process):
+
     SENTINEL = (None, None)
     LOGS_FOLDER = "logs"
     BASE_PATH = "/"
@@ -131,7 +152,7 @@ class LogReader(Process):
                 self.BASE_PATH, self.LOGS_FOLDER, app_id, logfile
             )
 
-            with self._access_manager.get_lock_for_reader(app_id, logfile):
+            with self._access_manager.reading_lock(app_id, logfile):
                 with open(filepath, self.FILE_OPENING_MODE) as logfile:
                     data += list(
                         filter(

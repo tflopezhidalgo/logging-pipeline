@@ -6,6 +6,7 @@ import random
 from datetime import datetime, timedelta
 
 from src.common import SocketWrapper
+from typing import Tuple
 
 parser = argparse.ArgumentParser()
 
@@ -14,7 +15,7 @@ SERVER_PORT = int(os.environ.get("CLI_SERVER_WRITE_PORT", "8000"))
 
 SAMPLE_SIZE = 100
 
-TAGS = ["test", "warning", "info", "debug", "unicorn"]
+TAGS = ["error", "warning", "info", "debug", "unicorn"]
 
 MESSAGES = [
     "Hey",
@@ -28,7 +29,7 @@ MESSAGES = [
 
 
 def build_read_msg(
-    current_date, app_id, tag=None, to=None, from_=None, pattern=None
+    app_id, tag=None, to=None, from_=None, pattern=None
 ):
     read_msg = {"app_id": app_id or "testing_app_id"}
 
@@ -49,7 +50,7 @@ def build_read_msg(
     return read_msg
 
 
-def build_log_msg(current_date, app_id):
+def build_write_msg(current_date, app_id):
     return {
         "app_id": app_id or "testing_app_id",
         "message": random.choice(MESSAGES),
@@ -57,79 +58,96 @@ def build_log_msg(current_date, app_id):
         "timestamp": current_date.isoformat(),
     }
 
-
-def send_log_data(server_addr, port, log_data):
-    sock = SocketWrapper()
-    sock.connect((server_addr, port))
-
-    if not sock.send_msg(log_data):
-        return sock.close()
-
-    response = sock.recv_msg()
-
-    if response is None:
-        pass
-
-    sock.close()
-
-    return response
-
+def build_random_date_filter(base_date: datetime) -> Tuple[datetime, datetime]:
+    return (base_date + timedelta(hours=5), base_date + timedelta(hours=1))
 
 def main(args) -> None:
     port = SERVER_PORT
     server_addr = SERVER_ADDR
-    app_id = args.app
 
-    now = datetime(year=2021, month=10, day=5)
+    c = Client(port=port, server_addr=server_addr, app_id=args.app, no_timestamp=args.no_timestamp)
 
     if args.read:
+        c.read_log(filter_dates=args.filter_dates, repeat=args.repeat)
+    else:
+        c.write_log()
 
-        repeat_for = SAMPLE_SIZE if args.repeat else 1
+
+class Client:
+
+    def __init__(self, **kwargs) -> None:
+        self.port: int = kwargs.get("port") or 12345
+        self.server_addr = kwargs.get("server_addr")
+
+        self.app_id = kwargs.get("app_id")
+        self.no_timestamp = kwargs.get("no_timestamp")
+
+    def _send_log_data(self, server_addr, port, payload):
+        sock = SocketWrapper()
+        sock.connect((server_addr, port))
+
+        if not sock.send_msg(payload):
+            return sock.close()
+
+        response = sock.recv_msg()
+
+        if response is None:
+            pass
+
+        sock.close()
+
+        return response
+
+    def read_log(self, filter_dates=False, repeat=False) -> None:
+        now = datetime(year=2021, month=10, day=5)
+
+        repeat_for = SAMPLE_SIZE if repeat else 1
 
         for i in range(repeat_for):
-            to = None
-            from_ = None
+            (to, _from_) = (None, None)
 
-            if args.filter_dates:
-                to = now + timedelta(hours=1)
-                from_ = now + timedelta(hours=5)
+            if filter_dates:
+                to, _from_ = build_random_date_filter(now)
 
-            log_msg = build_read_msg(
-                now,
-                app_id,
+            read_msg = build_read_msg(
+                self.app_id,
                 to=to,
-                from_=from_,
+                from_=_from_,
                 tag=args.tag,
                 pattern=args.pattern,
             )
 
             if args.invalid_params:
-                log_msg["app_id"] = ""
+                read_msg["app_id"] = ""
 
-            result = send_log_data(server_addr, port + 1, log_msg)
+            result = self._send_log_data(self.server_addr, self.port + 1, read_msg)
 
             if not args.profile:
                 print(
-                    f"Aplication ID = {app_id} Result: \n"
+                    f"Aplication ID = {self.app_id} Result: \n"
                     f" {result.get('result')}"
-                )
-    else:
+               )
+
+    def write_log(self) -> None:
+        now = datetime(year=2021, month=10, day=5)
+
+        # Generate a list of timestamps to send.
         dates = [now + d * timedelta(minutes=10) for d in range(SAMPLE_SIZE)]
 
-        if args.no_timestamp:
+        if self.no_timestamp:
             dates = [dates[0]]
 
         for d in dates:
-            log_msg = build_log_msg(d, app_id)
+            write_msg = build_write_msg(d, self.app_id)
 
             if args.no_timestamp:
-                log_msg.pop("timestamp")
+                write_msg.pop("timestamp")
 
-            result = send_log_data(server_addr, port, log_msg)
+            result = self._send_log_data(self.server_addr, self.port, write_msg)
 
             if not args.profile:
                 print(
-                    f"Application ID = {app_id} Result: \n"
+                    f"Application ID = {self.app_id} Result: \n"
                     f" {result.get('result')}"
                 )
 
@@ -137,7 +155,7 @@ def main(args) -> None:
 class Timer:
     """
     Small class to use as a context manager
-    for measure execution times.
+    for measuring execution times.
     """
 
     def __init__(self):
@@ -152,7 +170,7 @@ class Timer:
         self.stop = time.time()
 
     def get_elapsed(self):
-        return self.stop - self.start
+        return self.start and self.stop and self.stop - self.start
 
 
 if __name__ == "__main__":

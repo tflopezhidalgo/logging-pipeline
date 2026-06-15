@@ -1,4 +1,4 @@
-from multiprocessing import Queue, Process
+import multiprocessing
 
 from src.common import logging
 
@@ -11,7 +11,7 @@ class InvalidAppID(RuntimeError):
     pass
 
 
-class Router(Process):
+class Router(multiprocessing.Process):
 
     SENTINEL = None
 
@@ -75,8 +75,8 @@ class RouterPool:
     def __init__(
         self,
         size,
-        pending_queue: Queue,
-        dispatch_queues: list[Queue],
+        pending_queue: multiprocessing.Queue,
+        dispatch_queues: list[multiprocessing.Queue],
         fallback_queue,
         router_class,
     ):

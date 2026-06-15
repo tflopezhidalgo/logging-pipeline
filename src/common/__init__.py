@@ -1,5 +1,4 @@
 from .logging import logging  # noqa
-from .log_entry import LogEntry  # noqa
 from .socket_wrapper import SocketWrapper  # noqa
 
 

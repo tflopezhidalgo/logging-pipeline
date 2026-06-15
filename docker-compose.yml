@@ -2,33 +2,28 @@ version: '3'
 
 services:
   server:
-    image: python:3.9.7
+    build:
+      dockerfile: src/server/Dockerfile
+      context: .
     stdin_open: true
     tty: true
     container_name: server
-    working_dir: /
-    volumes:
-      - "./src:/src"
-    entrypoint: /src/server/entrypoint.sh
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONHASHSEED=0
-      - SERVER_PORT=12345
-      - SERVER_LISTEN_BACKLOG=500
+      - SERVER_LISTEN_BACKLOG=1
       - LOGGING_LEVEL=DEBUG
-      - FILE_WORKERS=20
+      - FILE_WORKERS=1
       - ROUTER_P_SIZE=20
       - RESPONSER_P_SIZE=20
     networks:
       - logging_pipeline_net
   client:
-    image: python:3.9.7
+    build:
+      dockerfile: src/client/Dockerfile
+      context: .
     container_name: client
-    working_dir: /
-    volumes:
-      - "./src:/src"
-    entrypoint: /src/client/entrypoint.sh
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1

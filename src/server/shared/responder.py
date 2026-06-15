@@ -1,9 +1,9 @@
-from multiprocessing import Process
+import multiprocessing
 
 from src.common import logging
 
 
-class _Responser(Process):
+class _Responder(multiprocessing.Process):
 
     SENTINEL = (None, None)
 
@@ -20,7 +20,7 @@ class _Responser(Process):
                 break  # noqa
 
             (sock, result) = conn_result
-            logging.info(f"Responding to {sock.getpeername()} with {result}")
+            logging.info(f"Responding to {sock.getpeername()}")
 
             if not sock.send_msg({"result": result}):
                 logging.info(
@@ -33,9 +33,9 @@ class _Responser(Process):
         self.join()
 
 
-class ResponserPool:
+class RespondersPool:
     def __init__(self, size, incoming_q):
-        self._pool = [_Responser(incoming_q) for _ in range(size)]
+        self._pool = [_Responder(incoming_q) for _ in range(size)]
 
     def start(self):
         for router in self._pool:

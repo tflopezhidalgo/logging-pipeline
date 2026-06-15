@@ -4,6 +4,10 @@ from src.server.shared import RouterPool, Router, InvalidParams
 
 
 class WriterRouter(Router):
+    """
+    Router for handling log writing requests.
+    """
+
     def _validate_params(self, params):
         sanitized = {}
 

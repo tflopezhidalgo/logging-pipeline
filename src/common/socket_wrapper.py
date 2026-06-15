@@ -1,7 +1,5 @@
 import json
-
-from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
-
+import socket
 
 class SocketWrapper:
     """
@@ -14,7 +12,7 @@ class SocketWrapper:
 
     def __init__(self, sock=None):
         if sock is None:
-            sock = socket(AF_INET, SOCK_STREAM)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self._sock = sock
 
@@ -75,5 +73,5 @@ class SocketWrapper:
         return self._sock.getpeername()
 
     def close(self):
-        self._sock.shutdown(SHUT_RDWR)
+        self._sock.shutdown(socket.SHUT_RDWR)
         return self._sock.close()

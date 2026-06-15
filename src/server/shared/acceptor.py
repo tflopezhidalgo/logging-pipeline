@@ -1,9 +1,9 @@
-from multiprocessing import Process, Value
+import multiprocessing
 
 from src.common import logging, SocketWrapper
 
 
-class Acceptor(Process):
+class Acceptor(multiprocessing.Process):
     """
     Responsible for handling throttling operations.
     If the output queue is either full or its size is above some threshold
@@ -18,7 +18,7 @@ class Acceptor(Process):
     def __init__(self, dispatch_queue, port, listen_backlog):
         super().__init__()
 
-        self._alive = Value("b", False)
+        self._alive = multiprocessing.Value("b", False)
         self._dispatch_q = dispatch_queue
 
         self._socket = SocketWrapper()

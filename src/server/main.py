@@ -1,80 +1,57 @@
 import os
 import signal
+import multiprocessing
 
-from multiprocessing import Queue, Manager
-
-from src.server.shared import Acceptor, AccessManager, ResponserPool
+from src.server.shared import Acceptor, AccessManager, RespondersPool
 from src.server.reader import LogReader, ReaderRouterPool
 from src.server.writer import LogWriter, WriterRouterPool
 from src.common import logging
 
 
-SERVER_PORT = int(os.environ.get("SERVER_PORT"))  # type: ignore
-SERVER_BACKLOG = int(os.environ.get("SERVER_LISTEN_BACKLOG"))  # type: ignore
+SERVER_PORT = int(os.environ.get("SERVER_PORT", '12345'))  # type: ignore
+SERVER_BACKLOG_SIZE = int(os.environ.get("SERVER_LISTEN_BACKLOG", 500))  # type: ignore
 FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 3))  # type: ignore
-ROUTER_P_SIZE = int(os.environ.get("ROUTER_P_SIZE", 3))  # type: ignore
-RESPONSER_P_SIZE = int(os.environ.get("RESPONSER_P_SIZE", 3))  # type: ignore
+
+ROUTER_POOL_SIZE = int(os.environ.get("ROUTER_P_SIZE", 3))  # type: ignore
+RESPONDER_POOL_SIZE = int(os.environ.get("RESPONSER_P_SIZE", 3))  # type: ignore
 
 
-def start_reader_processes(access_managers):
-    manager = Manager()
+def create_readers(access_managers):
+    manager = multiprocessing.Manager()
     router_q = manager.Queue()
-    result_q = Queue()
+    result_q = multiprocessing.Queue()
 
-    readers_queues = [Queue() for _ in range(FILE_WORKERS)]
+    readers_queues = [multiprocessing.Queue() for _ in range(FILE_WORKERS)]
 
     readers_pool = [
         LogReader(q, result_q, am)
         for q, am in zip(readers_queues, access_managers)
     ]
 
-    acceptor = Acceptor(router_q, SERVER_PORT + 1, SERVER_BACKLOG)
+    acceptor = Acceptor(router_q, SERVER_PORT + 1, SERVER_BACKLOG_SIZE)
+    router = ReaderRouterPool(ROUTER_POOL_SIZE, router_q, readers_queues, result_q)
+    responder = RespondersPool(RESPONDER_POOL_SIZE, result_q)
 
-    router = ReaderRouterPool(
-        ROUTER_P_SIZE, router_q, readers_queues, result_q
-    )
-
-    responser = ResponserPool(RESPONSER_P_SIZE, result_q)
-
-    acceptor.start()
-    router.start()
-
-    for reader in readers_pool:
-        reader.start()
-
-    responser.start()
-
-    return [acceptor, router, responser] + readers_pool
+    return [acceptor, router, responder] + readers_pool
 
 
-def start_writer_processes(access_managers):
-    manager = Manager()
+def create_writers(access_managers):
+    manager = multiprocessing.Manager()
     router_q = manager.Queue()
-    result_q = Queue()
+    result_q = multiprocessing.Queue()
 
-    writers_queues = [Queue() for _ in range(FILE_WORKERS)]
-
-    acceptor = Acceptor(router_q, SERVER_PORT, SERVER_BACKLOG)
-    router = WriterRouterPool(
-        ROUTER_P_SIZE, router_q, writers_queues, result_q
-    )
+    writers_queues = [multiprocessing.Queue() for _ in range(FILE_WORKERS)]
 
     writers_pool = [
         LogWriter(q, result_q, am)
         for q, am in zip(writers_queues, access_managers)
     ]
 
-    responser = ResponserPool(RESPONSER_P_SIZE, result_q)
+    acceptor = Acceptor(router_q, SERVER_PORT, SERVER_BACKLOG_SIZE)
+    router = WriterRouterPool(ROUTER_POOL_SIZE, router_q, writers_queues, result_q)
+    responder = RespondersPool(RESPONDER_POOL_SIZE, result_q)
 
-    acceptor.start()
-    router.start()
-
-    for writer in writers_pool:
-        writer.start()
-
-    responser.start()
-
-    return [acceptor, router, responser] + writers_pool
+    return [acceptor, router, responder] + writers_pool
 
 
 def shutdown(processes):
@@ -84,37 +61,38 @@ def shutdown(processes):
 
 
 def main():
-    writer_processes, reader_processes = [], []
+    processes = []
     try:
         access_managers = [AccessManager() for _ in range(FILE_WORKERS)]
 
-        writer_processes += start_writer_processes(access_managers)
-        reader_processes += start_reader_processes(access_managers)
+        processes += create_writers(access_managers)
+        processes += create_readers(access_managers)
+
+        for p in processes:
+            p.start()
 
         logging.info(
             f"Started server, listening in port {SERVER_PORT} "
             f"using {FILE_WORKERS} as WORKERS for reading/writing "
-            f"using {ROUTER_P_SIZE} as ROUTERS "
-            f"using {RESPONSER_P_SIZE} as RESPONSERS "
+            f"using {ROUTER_POOL_SIZE} as ROUTERS "
+            f"using {RESPONDER_POOL_SIZE} as RESPONSERS "
         )
 
-        signal.signal(
-            signal.SIGTERM,
-            lambda: shutdown(writer_processes + reader_processes),
-        )
+        signal.signal(signal.SIGTERM, lambda *_: shutdown(processes))
 
-        stop = False
-        while not stop:
+        should_stop = False
+
+        while not should_stop:
             try:
                 response = input()
             except Exception:
                 response = None
-            stop = response == "q"
+            should_stop = response == "q"
     except Exception as e:
         logging.error("Error initializing server processes [%s]" % e)
         logging.error("Shutting down...")
     finally:
-        shutdown(writer_processes + reader_processes)
+        shutdown(processes)
 
 
 if __name__ == "__main__":
