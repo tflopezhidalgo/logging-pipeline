@@ -10,7 +10,7 @@ from .framework import logging_client
 parser = argparse.ArgumentParser()
 
 SERVER_ADDR = os.environ.get("CLI_SERVER_ADDRESS", "127.0.0.1")
-SERVER_PORT = int(os.environ.get("CLI_SERVER_WRITE_PORT", "4310"))
+SERVER_PORT = int(os.environ.get("CLI_SERVER_WRITE_PORT", "4100"))
 
 SAMPLE_SIZE = 50
 

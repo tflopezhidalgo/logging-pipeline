@@ -55,14 +55,14 @@ class Client:
         sock.connect((server_addr, port))
 
         if not sock.send_msg(payload):
-            return sock.close()
+            sock.close()
+            return None
 
         response = sock.recv_msg()
 
-        if response is None:
-            pass
-
         sock.close()
+
+        print('Socket closed!')
 
         return response
 

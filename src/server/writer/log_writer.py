@@ -13,10 +13,11 @@ class WriteError(RuntimeError):
 class LogWriter(multiprocessing.Process):
     SENTINEL = None
     LOGS_FOLDER = "logs"
-    BASE_PATH = "/var/git/logging-pipeline/logs"
+    BASE_PATH = "/var/git/logging-pipeline"
     SUCEEDED_MSG = "Success"
     FILE_OPENING_MODE = "a+"
     FAILED_MSG = "Failed to write logs"
+
     NAME = 'log-writer'
 
     def __init__(self, operation_q, result_q, access_control_mgr):

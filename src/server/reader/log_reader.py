@@ -92,7 +92,7 @@ class LogReader(multiprocessing.Process):
 
     SENTINEL = (None, None)
     LOGS_FOLDER = "logs"
-    BASE_PATH = "/"
+    BASE_PATH = "/var/git/logging-pipeline"
     FAILED_MSG = "Failed to read files"
     FILE_OPENING_MODE = "r"
     NAME = 'log-reader'

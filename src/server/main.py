@@ -8,7 +8,7 @@ from src.server.writer import LogWriter, WriterRouterPool
 from src.common import logging
 
 
-SERVER_PORT = int(os.environ.get("SERVER_PORT", '4300'))  # type: ignore
+SERVER_PORT = int(os.environ.get("SERVER_PORT", '4100'))  # type: ignore
 SERVER_BACKLOG_SIZE = int(os.environ.get("SERVER_LISTEN_BACKLOG", 500))  # type: ignore
 FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 1))  # type: ignore
 
@@ -56,12 +56,12 @@ def create_writers(access_managers):
 
 def shutdown(processes):
     for p in processes:
-        logger.info('Stopped successfully process %s' % p.NAME)
         p.stop()
+        logging.info('Stopped successfully process %s' % p.name)
 
     for p in processes:
         p.join()
-        logger.info('Joined successfully process %s' % p.NAME)
+        logging.info('Joined successfully process %s' % p.name)
 
 
 def handle_signal(s, processes):
@@ -99,7 +99,7 @@ def main():
                 response = None
             should_stop = response == "q"
     except Exception as e:
-        logging.error("Error initializing server processes [%s]" % e)
+        logging.error("Error within server processes [%s]" % e)
         logging.error("Shutting down...")
     finally:
         shutdown(processes)
