@@ -11,7 +11,7 @@ class Filter:
     Base class for filters. Each filter should implement entry_matches_filter method
     """
 
-    def entry_matches_filter(self, _):
+    def entry_matches_filter(self, log_entry):
         raise NotImplementedError
 
 
@@ -54,25 +54,23 @@ class PatternFilter(Filter):
 
 
 class _LineFilter:
-    """
-
-    """
+    """ """
 
     def __init__(self, params):
         self.filters = []
 
-        from_date = params.get("from")
-        to_date = params.get("to")
+        from_date = params.get('from')
+        to_date = params.get('to')
 
         if from_date and to_date:
             self.filters.append(DateIntervalFilter(from_date, to_date))
 
-        tag_to_find = params.get("tag")
+        tag_to_find = params.get('tag')
 
         if tag_to_find:
             self.filters.append(TagFilter(tag_to_find))
 
-        pattern = params.get("pattern")
+        pattern = params.get('pattern')
 
         if pattern:
             self.filters.append(PatternFilter(pattern))
@@ -89,12 +87,11 @@ class _LineFilter:
 
 
 class LogReader(multiprocessing.Process):
-
     SENTINEL = (None, None)
-    LOGS_FOLDER = "logs"
-    BASE_PATH = "."
-    FAILED_MSG = "Failed to read files"
-    FILE_OPENING_MODE = "r"
+    LOGS_FOLDER = 'logs'
+    BASE_PATH = '.'
+    FAILED_MSG = 'Failed to read files'
+    FILE_OPENING_MODE = 'r'
 
     def __init__(self, operation_q, result_q, access_manager):
         super().__init__()
@@ -109,48 +106,42 @@ class LogReader(multiprocessing.Process):
 
         filtered = list(
             filter(
-                lambda filename: (
-                    filename >= from_filename and filename <= to_filename
-                ),
+                lambda filename: filename >= from_filename and filename <= to_filename,
                 filenames,
             )
         )
         return filtered
 
     def __get_filenames_to_read(self, params):
-        app_id = params.get("app_id")
+        app_id = params.get('app_id')
 
         logs_path = os.path.join(self.BASE_PATH, self.LOGS_FOLDER, app_id)
 
         if not os.path.exists(logs_path):
-            logging.error(f"There is no log folder for app = {app_id}")
+            logging.error(f'There is no log folder for app = {app_id}')
             return []
 
         logs = os.listdir(logs_path)
 
         logs.sort()
 
-        from_date = params.get("from")
-        to_date = params.get("to")
+        from_date = params.get('from')
+        to_date = params.get('to')
 
         if from_date and to_date:
-            logs = self.__filter_filenames_between_dates(
-                from_date, to_date, logs
-            )
+            logs = self.__filter_filenames_between_dates(from_date, to_date, logs)
 
         return logs
 
     def __perform_operation(self, params):
-        app_id = params["app_id"]
+        app_id = params['app_id']
 
         line_filter = _LineFilter(params)
 
         data = []
 
         for logfile in self.__get_filenames_to_read(params):
-            filepath = os.path.join(
-                self.BASE_PATH, self.LOGS_FOLDER, app_id, logfile
-            )
+            filepath = os.path.join(self.BASE_PATH, self.LOGS_FOLDER, app_id, logfile)
 
             with self._access_manager.reading_lock(app_id, logfile):
                 with open(filepath, self.FILE_OPENING_MODE) as logfile:
@@ -161,7 +152,7 @@ class LogReader(multiprocessing.Process):
                         )
                     )
 
-        return "".join(data)
+        return ''.join(data)
 
     def run(self):
         while True:
@@ -171,9 +162,7 @@ class LogReader(multiprocessing.Process):
                 break  # noqa
 
             try:
-                logging.info(
-                    f"Found read operation with params {operation_params}"
-                )
+                logging.info(f'Found read operation with params {operation_params}')
                 result = self.__perform_operation(operation_params)
             except Exception as e:
                 logging.error(e)

@@ -18,7 +18,7 @@ class Acceptor(multiprocessing.Process):
     def __init__(self, dispatch_queue, port, listen_backlog):
         super().__init__()
 
-        self._alive = multiprocessing.Value("b", False)
+        self._alive = multiprocessing.Value('b', False)
         self._dispatch_q = dispatch_queue
 
         self._socket = SocketWrapper()
@@ -27,20 +27,14 @@ class Acceptor(multiprocessing.Process):
     def __handle_client_connection(self, client_sock):
         if self._dispatch_q.qsize() >= self.THROTTLING_THRESHOLD:
             logging.info(
-                f"Making client {client_sock.getpeername()} aware of"
-                " throttling"
+                f'Making client {client_sock.getpeername()} aware of throttling'
             )
             sent = client_sock.send_msg(
-                {
-                    "result": (
-                        "Server is not available now. Please try again later."
-                    )
-                }
+                {'result': ('Server is not available now. Please try again later.')}
             )
             if not sent:
                 logging.info(
-                    "Failed to send result to client"
-                    f" {client_sock.getpeername()}"
+                    f'Failed to send result to client {client_sock.getpeername()}'
                 )
                 client_sock.close()
         else:
@@ -49,7 +43,7 @@ class Acceptor(multiprocessing.Process):
     def __accept_new_connection(self):
         # Connection arrived
         c, addr = self._socket.accept()
-        logging.info("Got connection from {}".format(addr))
+        logging.info('Got connection from {}'.format(addr))
         return c
 
     def run(self):
@@ -69,4 +63,4 @@ class Acceptor(multiprocessing.Process):
         try:
             self._socket.close()
         except OSError as e:
-            logging.error("Unable to shutdown socket [%s]" % e)
+            logging.error('Unable to shutdown socket [%s]' % e)
