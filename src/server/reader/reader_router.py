@@ -3,8 +3,7 @@ import datetime
 
 from src.server.shared import RouterPool, Router, InvalidParams, InvalidAppID
 
-LOGS_FOLDER = "/var/git/logging-pipeline/logs"
-
+LOGS_FOLDER = "logs"
 
 class ReaderRouter(Router):
     """

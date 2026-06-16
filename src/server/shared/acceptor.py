@@ -14,10 +14,9 @@ class Acceptor(multiprocessing.Process):
     # If there're more than THROTTLING_THRESHOLD items enqueued
     # start to throttling
     THROTTLING_THRESHOLD = 100
-    NAME = 'acceptor'
 
     def __init__(self, dispatch_queue, port, listen_backlog):
-        super().__init__(name=self.NAME)
+        super().__init__()
 
         self._alive = multiprocessing.Value("b", False)
         self._dispatch_q = dispatch_queue
@@ -66,7 +65,7 @@ class Acceptor(multiprocessing.Process):
                 logging.error(e)
 
     def stop(self):
-        logging.info('Stopping worker: %s' % self.NAME)
+        logging.info('Stopping worker: %s' % self.__class__.__name__)
         try:
             self._socket.close()
         except OSError as e:

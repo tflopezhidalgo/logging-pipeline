@@ -80,7 +80,6 @@ class RouterPool:
         fallback_queue,
         router_class,
     ):
-        self.name = 'RouterPool'
         self._pool = [
             router_class(pending_queue, dispatch_queues, fallback_queue)
             for _ in range(size)

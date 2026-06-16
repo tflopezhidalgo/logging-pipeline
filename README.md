@@ -33,3 +33,15 @@ TBD.
 ## Correr tests
 
 Para comprobar y ejercitar el soporte para concurrencia en el servidor se han implementado una serie de scripts que corren tests de carga y concurrencia. Estos scripts simulan el comportamiento de multiples clientes enviando logs al servidor de manera concurrente.
+
+Para levantar el servidor basta con correr el siguiente comando desde la raiz del proyecto:
+
+```bash
+src/server/entrypoint.sh
+```
+
+Luego, para correr los tests de carga y concurrencia, se pueden usar los siguientes comandos:
+
+```bash
+TEST=<nombre de test> src/client/entrypoint.sh
+```
