@@ -21,7 +21,7 @@ class Router(multiprocessing.Process):
         self._dispatch_qs = dispatch_qs
         self._fallback_q = fallback_queue
 
-    def _validate_params(self, data):
+    def _validate_params(self, params):
         raise NotImplementedError()
 
     def __ask_client_for_op(self, connection):

@@ -8,12 +8,12 @@ from src.server.writer import LogWriter, WriterRouterPool
 from src.common import logging
 
 
-SERVER_PORT = int(os.environ.get("SERVER_PORT", "4100"))  # type: ignore
-SERVER_BACKLOG_SIZE = int(os.environ.get("SERVER_LISTEN_BACKLOG", 500))  # type: ignore
-FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 1))  # type: ignore
+SERVER_PORT = int(os.environ.get("SERVER_PORT", "4100"))
+SERVER_BACKLOG_SIZE = int(os.environ.get("SERVER_LISTEN_BACKLOG", 500))
+FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 1))
 
-ROUTER_POOL_SIZE = int(os.environ.get("ROUTER_P_SIZE", 1))  # type: ignore
-RESPONDER_POOL_SIZE = int(os.environ.get("RESPONSER_P_SIZE", 1))  # type: ignore
+ROUTER_POOL_SIZE = int(os.environ.get("ROUTER_P_SIZE", 1))
+RESPONDER_POOL_SIZE = int(os.environ.get("RESPONSER_P_SIZE", 1))
 
 
 def create_readers(access_managers):

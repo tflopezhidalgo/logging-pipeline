@@ -11,7 +11,7 @@ class Filter:
     Base class for filters. Each filter should implement entry_matches_filter method
     """
 
-    def entry_matches_filter(self, _):
+    def entry_matches_filter(self, log_entry):
         raise NotImplementedError
 
 
