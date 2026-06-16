@@ -3,8 +3,7 @@ import datetime
 
 from src.server.shared import RouterPool, Router, InvalidParams, InvalidAppID
 
-LOGS_FOLDER = "/logs"
-
+LOGS_FOLDER = "logs"
 
 class ReaderRouter(Router):
     """

@@ -65,7 +65,8 @@ class Acceptor(multiprocessing.Process):
                 logging.error(e)
 
     def stop(self):
+        logging.info('Stopping worker: %s' % self.__class__.__name__)
         try:
             self._socket.close()
-        except OSError:
-            logging.error("Unable to shutdown socket")
+        except OSError as e:
+            logging.error("Unable to shutdown socket [%s]" % e)

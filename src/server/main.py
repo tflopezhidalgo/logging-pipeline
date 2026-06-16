@@ -8,12 +8,12 @@ from src.server.writer import LogWriter, WriterRouterPool
 from src.common import logging
 
 
-SERVER_PORT = int(os.environ.get("SERVER_PORT", '12345'))  # type: ignore
+SERVER_PORT = int(os.environ.get("SERVER_PORT", '4100'))  # type: ignore
 SERVER_BACKLOG_SIZE = int(os.environ.get("SERVER_LISTEN_BACKLOG", 500))  # type: ignore
-FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 3))  # type: ignore
+FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 1))  # type: ignore
 
-ROUTER_POOL_SIZE = int(os.environ.get("ROUTER_P_SIZE", 3))  # type: ignore
-RESPONDER_POOL_SIZE = int(os.environ.get("RESPONSER_P_SIZE", 3))  # type: ignore
+ROUTER_POOL_SIZE = int(os.environ.get("ROUTER_P_SIZE", 1))  # type: ignore
+RESPONDER_POOL_SIZE = int(os.environ.get("RESPONSER_P_SIZE", 1))  # type: ignore
 
 
 def create_readers(access_managers):
@@ -57,7 +57,16 @@ def create_writers(access_managers):
 def shutdown(processes):
     for p in processes:
         p.stop()
+        logging.info('Stopped successfully process %s' % p.name)
+
+    for p in processes:
         p.join()
+        logging.info('Joined successfully process %s' % p.name)
+
+
+def handle_signal(s, processes):
+    logging.info('Received %d, shutting down workers.' % s)
+    shutdown(processes)
 
 
 def main():
@@ -78,7 +87,8 @@ def main():
             f"using {RESPONDER_POOL_SIZE} as RESPONSERS "
         )
 
-        signal.signal(signal.SIGTERM, lambda *_: shutdown(processes))
+        signal.signal(signal.SIGTERM, lambda s, _: handle_signal(s, processes))
+        signal.signal(signal.SIGINT , lambda s, _: handle_signal(s, processes))
 
         should_stop = False
 
@@ -89,7 +99,7 @@ def main():
                 response = None
             should_stop = response == "q"
     except Exception as e:
-        logging.error("Error initializing server processes [%s]" % e)
+        logging.error("Error within server processes [%s]" % e)
         logging.error("Shutting down...")
     finally:
         shutdown(processes)

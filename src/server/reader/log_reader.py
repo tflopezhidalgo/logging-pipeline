@@ -92,7 +92,7 @@ class LogReader(multiprocessing.Process):
 
     SENTINEL = (None, None)
     LOGS_FOLDER = "logs"
-    BASE_PATH = "/"
+    BASE_PATH = "."
     FAILED_MSG = "Failed to read files"
     FILE_OPENING_MODE = "r"
 
@@ -182,5 +182,7 @@ class LogReader(multiprocessing.Process):
             self._result_q.put((sock, result))
 
     def stop(self):
+        logging.info('Stopping worker: %s' % self.name)
+
         self._operation_q.put(self.SENTINEL)
         self.join()

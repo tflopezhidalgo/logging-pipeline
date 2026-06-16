@@ -29,6 +29,8 @@ class _Responder(multiprocessing.Process):
             sock.close()
 
     def stop(self):
+        logging.info('Stopping worker: %s' % self.__class__.__name__)
+
         self._incoming_q.put(self.SENTINEL)
         self.join()
 

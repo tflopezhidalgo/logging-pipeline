@@ -42,22 +42,25 @@ class SocketWrapper:
         msg_buf = ""
 
         try:
-
             def chunk_has_msg_sep(chunk):
                 return chunk.find(self.MSG_SEP) != -1
 
             done = False
             while not done:
-                chunk = self._sock.recv(self.CHUNK_SIZE).decode()
+                try:
+                    chunk = self._sock.recv(self.CHUNK_SIZE).decode()
 
-                if chunk_has_msg_sep(chunk):
-                    size_part, msg_part = chunk.split(self.MSG_SEP, 1)
-                    done = True
-                else:
-                    size_part, msg_part = chunk, ""
+                    if chunk_has_msg_sep(chunk):
+                        size_part, msg_part = chunk.split(self.MSG_SEP, 1)
+                        done = True
+                    else:
+                        size_part, msg_part = chunk, ""
 
-                size_buf += size_part
-                msg_buf += msg_part
+                    size_buf += size_part
+                    msg_buf += msg_part
+
+                except socket.timeout:
+                    pass
 
             pending_bytes_to_recv = int(size_buf) - len(msg_buf)
 
@@ -73,5 +76,9 @@ class SocketWrapper:
         return self._sock.getpeername()
 
     def close(self):
-        self._sock.shutdown(socket.SHUT_RDWR)
-        return self._sock.close()
+        try:
+            self._sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        finally:
+            self._sock.close()
