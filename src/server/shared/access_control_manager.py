@@ -40,7 +40,6 @@ class AccessManager:
 
     def writing_lock(self, app_id, filename):
         with self.lock:
-
             # si el reader esta leyendo el archivo que
             # tenemos que escribir necesitamos tomar
             # ese lock.
@@ -58,7 +57,6 @@ class AccessManager:
 
     def reading_lock(self, app_id, filename):
         with self.lock:
-
             # si el writer esta escribiendo el archivo que necesitamos
             # entonces necesitamos su lock.
             if self.writer_file.value == filename:

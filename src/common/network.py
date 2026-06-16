@@ -1,6 +1,7 @@
 import json
 import socket
 
+
 class SocketWrapper:
     """
     Socket wrapper that handles both socket-related and
@@ -42,6 +43,7 @@ class SocketWrapper:
         msg_buf = ""
 
         try:
+
             def chunk_has_msg_sep(chunk):
                 return chunk.find(self.MSG_SEP) != -1
 

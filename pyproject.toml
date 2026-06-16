@@ -1,3 +1,11 @@
+[project]
+name = "logging-pipeline"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
 [tool.black]
 line-length = 79
 target-version = ['py36', 'py37', 'py38']
@@ -11,3 +19,8 @@ exclude = '''
   |\.yml
 )/
 '''
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.14",
+]

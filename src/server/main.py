@@ -8,7 +8,7 @@ from src.server.writer import LogWriter, WriterRouterPool
 from src.common import logging
 
 
-SERVER_PORT = int(os.environ.get("SERVER_PORT", '4100'))  # type: ignore
+SERVER_PORT = int(os.environ.get("SERVER_PORT", "4100"))  # type: ignore
 SERVER_BACKLOG_SIZE = int(os.environ.get("SERVER_LISTEN_BACKLOG", 500))  # type: ignore
 FILE_WORKERS = int(os.environ.get("FILE_WORKERS", 1))  # type: ignore
 
@@ -24,8 +24,7 @@ def create_readers(access_managers):
     readers_queues = [multiprocessing.Queue() for _ in range(FILE_WORKERS)]
 
     readers_pool = [
-        LogReader(q, result_q, am)
-        for q, am in zip(readers_queues, access_managers)
+        LogReader(q, result_q, am) for q, am in zip(readers_queues, access_managers)
     ]
 
     acceptor = Acceptor(router_q, SERVER_PORT + 1, SERVER_BACKLOG_SIZE)
@@ -43,8 +42,7 @@ def create_writers(access_managers):
     writers_queues = [multiprocessing.Queue() for _ in range(FILE_WORKERS)]
 
     writers_pool = [
-        LogWriter(q, result_q, am)
-        for q, am in zip(writers_queues, access_managers)
+        LogWriter(q, result_q, am) for q, am in zip(writers_queues, access_managers)
     ]
 
     acceptor = Acceptor(router_q, SERVER_PORT, SERVER_BACKLOG_SIZE)
@@ -57,15 +55,15 @@ def create_writers(access_managers):
 def shutdown(processes):
     for p in processes:
         p.stop()
-        logging.info('Stopped successfully process %s' % p.name)
+        logging.info("Stopped successfully process %s" % p.name)
 
     for p in processes:
         p.join()
-        logging.info('Joined successfully process %s' % p.name)
+        logging.info("Joined successfully process %s" % p.name)
 
 
 def handle_signal(s, processes):
-    logging.info('Received %d, shutting down workers.' % s)
+    logging.info("Received %d, shutting down workers." % s)
     shutdown(processes)
 
 
@@ -88,7 +86,7 @@ def main():
         )
 
         signal.signal(signal.SIGTERM, lambda s, _: handle_signal(s, processes))
-        signal.signal(signal.SIGINT , lambda s, _: handle_signal(s, processes))
+        signal.signal(signal.SIGINT, lambda s, _: handle_signal(s, processes))
 
         should_stop = False
 

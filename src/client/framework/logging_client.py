@@ -3,9 +3,8 @@ from typing import Tuple
 
 from src.common import SocketWrapper
 
-def build_read_msg(
-    app_id, tag=None, to=None, from_=None, pattern=None
-):
+
+def build_read_msg(app_id, tag=None, to=None, from_=None, pattern=None):
     read_msg = {"app_id": app_id or "testing_app_id"}
 
     if to:
@@ -30,6 +29,7 @@ def build_write_msg(current_date, app_id, message, tags):
         "tags": tags,
         "timestamp": current_date.isoformat(),
     }
+
 
 def build_random_date_filter(base_date: datetime) -> Tuple[datetime, datetime]:
     return (base_date + timedelta(hours=5), base_date + timedelta(hours=1))
@@ -62,7 +62,7 @@ class Client:
 
         sock.close()
 
-        print('Socket closed!')
+        print("Socket closed!")
 
         return response
 
@@ -89,10 +89,7 @@ class Client:
         result = self._send_log_data(self.server_addr, self.port + 1, read_msg)
 
         if not self.profile:
-            print(
-                f"Aplication ID = {self.app_id} Result: \n"
-                f" {result.get('result')}"
-           )
+            print(f"Aplication ID = {self.app_id} Result: \n {result.get('result')}")
 
     def write(self, d, message, tags) -> None:
         msg = build_write_msg(d, self.app_id, message, tags)
@@ -104,9 +101,4 @@ class Client:
         result = self._send_log_data(self.server_addr, self.port, msg)
 
         if not self.profile:
-            print(
-                f"Application ID = {self.app_id} Result: \n"
-                f" {result.get('result')}"
-            )
-
-
+            print(f"Application ID = {self.app_id} Result: \n {result.get('result')}")

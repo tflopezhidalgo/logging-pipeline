@@ -57,7 +57,6 @@ class LogWriter(multiprocessing.Process):
 
             try:
                 with open(logfile_path, self.FILE_OPENING_MODE) as logfile:
-
                     logging.info(f"Writing to file = {logfile_path}")
                     log_data = self.__build_log_data(params).to_str()
 
@@ -88,7 +87,7 @@ class LogWriter(multiprocessing.Process):
             self._result_q.put((sock, result))
 
     def stop(self):
-        logging.info('Stopping worker: %s' % self.__class__.__name__)
+        logging.info("Stopping worker: %s" % self.__class__.__name__)
 
         self._operation_q.put(self.SENTINEL)
         self.join()

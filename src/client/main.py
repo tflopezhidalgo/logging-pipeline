@@ -36,8 +36,8 @@ def main(args) -> None:
         server_addr=server_addr,
         app_id=args.app,
         no_timestamp=args.no_timestamp,
-        profile=args.profile
-        )
+        profile=args.profile,
+    )
 
     if args.read:
         repeat_for = SAMPLE_SIZE if args.repeat else 1
@@ -47,7 +47,7 @@ def main(args) -> None:
                 pattern=args.pattern,
                 tag=args.tag,
                 filter_dates=args.filter_dates,
-                )
+            )
     else:
         now = datetime(year=2021, month=10, day=5)
 
@@ -91,12 +91,8 @@ if __name__ == "__main__":
         action="store_true",
         help="Show execution time after finishing",
     )
-    parser.add_argument(
-        "--read", action="store_true", help="Use read operation flag"
-    )
-    parser.add_argument(
-        "--app", required=True, type=str, help="Application's id"
-    )
+    parser.add_argument("--read", action="store_true", help="Use read operation flag")
+    parser.add_argument("--app", required=True, type=str, help="Application's id")
     parser.add_argument("--tag", type=str, help="Tag to search for")
     parser.add_argument("--pattern", type=str, help="Pattern to search for")
     parser.add_argument(
@@ -129,7 +125,4 @@ if __name__ == "__main__":
 
     if args.profile:
         type = "reader" if args.read else "writer"
-        print(
-            f"[{type}][{args.app}] Time elapsed: %s secs."
-            % (timer.get_elapsed())
-        )
+        print(f"[{type}][{args.app}] Time elapsed: %s secs." % (timer.get_elapsed()))

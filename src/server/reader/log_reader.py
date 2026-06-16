@@ -54,9 +54,7 @@ class PatternFilter(Filter):
 
 
 class _LineFilter:
-    """
-
-    """
+    """ """
 
     def __init__(self, params):
         self.filters = []
@@ -89,7 +87,6 @@ class _LineFilter:
 
 
 class LogReader(multiprocessing.Process):
-
     SENTINEL = (None, None)
     LOGS_FOLDER = "logs"
     BASE_PATH = "."
@@ -109,9 +106,7 @@ class LogReader(multiprocessing.Process):
 
         filtered = list(
             filter(
-                lambda filename: (
-                    filename >= from_filename and filename <= to_filename
-                ),
+                lambda filename: filename >= from_filename and filename <= to_filename,
                 filenames,
             )
         )
@@ -134,9 +129,7 @@ class LogReader(multiprocessing.Process):
         to_date = params.get("to")
 
         if from_date and to_date:
-            logs = self.__filter_filenames_between_dates(
-                from_date, to_date, logs
-            )
+            logs = self.__filter_filenames_between_dates(from_date, to_date, logs)
 
         return logs
 
@@ -148,9 +141,7 @@ class LogReader(multiprocessing.Process):
         data = []
 
         for logfile in self.__get_filenames_to_read(params):
-            filepath = os.path.join(
-                self.BASE_PATH, self.LOGS_FOLDER, app_id, logfile
-            )
+            filepath = os.path.join(self.BASE_PATH, self.LOGS_FOLDER, app_id, logfile)
 
             with self._access_manager.reading_lock(app_id, logfile):
                 with open(filepath, self.FILE_OPENING_MODE) as logfile:
@@ -171,9 +162,7 @@ class LogReader(multiprocessing.Process):
                 break  # noqa
 
             try:
-                logging.info(
-                    f"Found read operation with params {operation_params}"
-                )
+                logging.info(f"Found read operation with params {operation_params}")
                 result = self.__perform_operation(operation_params)
             except Exception as e:
                 logging.error(e)
@@ -182,7 +171,7 @@ class LogReader(multiprocessing.Process):
             self._result_q.put((sock, result))
 
     def stop(self):
-        logging.info('Stopping worker: %s' % self.name)
+        logging.info("Stopping worker: %s" % self.name)
 
         self._operation_q.put(self.SENTINEL)
         self.join()

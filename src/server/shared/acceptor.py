@@ -27,20 +27,14 @@ class Acceptor(multiprocessing.Process):
     def __handle_client_connection(self, client_sock):
         if self._dispatch_q.qsize() >= self.THROTTLING_THRESHOLD:
             logging.info(
-                f"Making client {client_sock.getpeername()} aware of"
-                " throttling"
+                f"Making client {client_sock.getpeername()} aware of throttling"
             )
             sent = client_sock.send_msg(
-                {
-                    "result": (
-                        "Server is not available now. Please try again later."
-                    )
-                }
+                {"result": ("Server is not available now. Please try again later.")}
             )
             if not sent:
                 logging.info(
-                    "Failed to send result to client"
-                    f" {client_sock.getpeername()}"
+                    f"Failed to send result to client {client_sock.getpeername()}"
                 )
                 client_sock.close()
         else:
@@ -65,7 +59,7 @@ class Acceptor(multiprocessing.Process):
                 logging.error(e)
 
     def stop(self):
-        logging.info('Stopping worker: %s' % self.__class__.__name__)
+        logging.info("Stopping worker: %s" % self.__class__.__name__)
         try:
             self._socket.close()
         except OSError as e:

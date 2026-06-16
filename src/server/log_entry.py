@@ -1,8 +1,8 @@
 import re
 import datetime
 
-class LogEntry:
 
+class LogEntry:
     LOG_STRUCTURE_REGEX = r"\[(.*)\]\[(.*)\](.*)$"
 
     def __init__(self, date, tags, content):

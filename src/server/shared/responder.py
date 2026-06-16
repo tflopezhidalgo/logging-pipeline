@@ -4,7 +4,6 @@ from src.common import logging
 
 
 class _Responder(multiprocessing.Process):
-
     SENTINEL = (None, None)
 
     def __init__(self, incoming_queue):
@@ -23,13 +22,11 @@ class _Responder(multiprocessing.Process):
             logging.info(f"Responding to {sock.getpeername()}")
 
             if not sock.send_msg({"result": result}):
-                logging.info(
-                    f"Failed to send result to client {sock.getpeername()}"
-                )
+                logging.info(f"Failed to send result to client {sock.getpeername()}")
             sock.close()
 
     def stop(self):
-        logging.info('Stopping worker: %s' % self.__class__.__name__)
+        logging.info("Stopping worker: %s" % self.__class__.__name__)
 
         self._incoming_q.put(self.SENTINEL)
         self.join()

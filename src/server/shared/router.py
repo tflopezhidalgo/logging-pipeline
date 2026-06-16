@@ -12,7 +12,6 @@ class InvalidAppID(RuntimeError):
 
 
 class Router(multiprocessing.Process):
-
     SENTINEL = None
 
     def __init__(self, pending_q, dispatch_qs, fallback_queue):
@@ -45,23 +44,17 @@ class Router(multiprocessing.Process):
                 operation_params = self.__ask_client_for_op(connection)
                 operation_params = self._validate_params(operation_params)
             except InvalidParams:
-                self._fallback_q.put(
-                    (connection, "One of the params is invalid.")
-                )
+                self._fallback_q.put((connection, "One of the params is invalid."))
                 continue
             except InvalidAppID:
-                self._fallback_q.put(
-                    (connection, "There're no logs for that app.")
-                )
+                self._fallback_q.put((connection, "There're no logs for that app."))
                 continue
             except (Exception, OSError) as e:
                 logging.error(f"Router failed to establish connection {e}")
                 connection.close()
                 continue
 
-            q_index = self.__compute_dispatch_queue_index(
-                operation_params["app_id"]
-            )
+            q_index = self.__compute_dispatch_queue_index(operation_params["app_id"])
 
             logging.info(f"Routing message to queue {q_index}")
 

@@ -5,6 +5,7 @@ from src.server.shared import RouterPool, Router, InvalidParams, InvalidAppID
 
 LOGS_FOLDER = "logs"
 
+
 class ReaderRouter(Router):
     """
     Router for the reader endpoint. It validates the parameters and returns the logs
@@ -31,14 +32,10 @@ class ReaderRouter(Router):
             raise InvalidParams()
 
         if params.get("to"):
-            sanitized["to"] = datetime.datetime.fromisoformat(
-                params.get("from")
-            )
+            sanitized["to"] = datetime.datetime.fromisoformat(params.get("from"))
 
         if params.get("from"):
-            sanitized["from"] = datetime.datetime.fromisoformat(
-                params.get("to")
-            )
+            sanitized["from"] = datetime.datetime.fromisoformat(params.get("to"))
 
         if params.get("tag"):
             sanitized["tag"] = params.get("tag")
