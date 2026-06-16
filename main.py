@@ -1,6 +1,6 @@
 def main():
-    print("Hello from logging-pipeline!")
+    print('Hello from logging-pipeline!')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

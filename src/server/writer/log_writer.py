@@ -12,11 +12,11 @@ class WriteError(RuntimeError):
 
 class LogWriter(multiprocessing.Process):
     SENTINEL = None
-    LOGS_FOLDER = "logs"
-    BASE_PATH = "."
-    SUCEEDED_MSG = "Success"
-    FILE_OPENING_MODE = "a+"
-    FAILED_MSG = "Failed to write logs"
+    LOGS_FOLDER = 'logs'
+    BASE_PATH = '.'
+    SUCEEDED_MSG = 'Success'
+    FILE_OPENING_MODE = 'a+'
+    FAILED_MSG = 'Failed to write logs'
 
     def __init__(self, operation_q, result_q, access_control_mgr):
         super().__init__()
@@ -26,9 +26,9 @@ class LogWriter(multiprocessing.Process):
         self._access_control_mgr = access_control_mgr
 
     def __build_log_data(self, params):
-        timestamp = params.get("timestamp")
-        tags = params.get("tags")
-        message = params.get("message")
+        timestamp = params.get('timestamp')
+        tags = params.get('tags')
+        message = params.get('message')
 
         return LogEntry(timestamp, tags, message)
 
@@ -44,9 +44,9 @@ class LogWriter(multiprocessing.Process):
             os.mkdir(app_id_logs_folder)
 
     def __process_operation(self, params):
-        filename = build_filename(params.get("timestamp"))
+        filename = build_filename(params.get('timestamp'))
 
-        app_id = params.get("app_id")
+        app_id = params.get('app_id')
 
         self.__ensure_app_id_folder_exists(app_id)
 
@@ -57,7 +57,7 @@ class LogWriter(multiprocessing.Process):
 
             try:
                 with open(logfile_path, self.FILE_OPENING_MODE) as logfile:
-                    logging.info(f"Writing to file = {logfile_path}")
+                    logging.info(f'Writing to file = {logfile_path}')
                     log_data = self.__build_log_data(params).to_str()
 
                     if len(log_data) != logfile.write(log_data):
@@ -78,7 +78,7 @@ class LogWriter(multiprocessing.Process):
             (sock, params) = write_operation
 
             try:
-                logging.info(f"Found write operation with params = {params}")
+                logging.info(f'Found write operation with params = {params}')
                 result = self.__process_operation(params)
             except (WriteError, Exception) as e:
                 logging.error(e)
@@ -87,7 +87,7 @@ class LogWriter(multiprocessing.Process):
             self._result_q.put((sock, result))
 
     def stop(self):
-        logging.info("Stopping worker: %s" % self.__class__.__name__)
+        logging.info('Stopping worker: %s' % self.__class__.__name__)
 
         self._operation_q.put(self.SENTINEL)
         self.join()

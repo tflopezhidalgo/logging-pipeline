@@ -8,7 +8,7 @@ class SocketWrapper:
     protocol-related logic.
     """
 
-    MSG_SEP = "/"
+    MSG_SEP = '/'
     CHUNK_SIZE = 10
 
     def __init__(self, sock=None):
@@ -18,7 +18,7 @@ class SocketWrapper:
         self._sock = sock
 
     def bind_and_listen(self, port, listen_backlog):
-        self._sock.bind(("0.0.0.0", port))
+        self._sock.bind(('0.0.0.0', port))
         self._sock.listen(listen_backlog)
 
     def connect(self, addr):
@@ -31,16 +31,16 @@ class SocketWrapper:
     def send_msg(self, data):
         try:
             json_data = json.dumps(data)
-            msg = f"{len(json_data)}{self.MSG_SEP}{json_data}"
-            msg = msg.encode("utf8")
+            msg = f'{len(json_data)}{self.MSG_SEP}{json_data}'
+            msg = msg.encode('utf8')
             self._sock.sendall(msg)
             return len(msg)
         except (Exception, OSError):
             return 0
 
     def recv_msg(self):
-        size_buf = ""
-        msg_buf = ""
+        size_buf = ''
+        msg_buf = ''
 
         try:
 
@@ -56,7 +56,7 @@ class SocketWrapper:
                         size_part, msg_part = chunk.split(self.MSG_SEP, 1)
                         done = True
                     else:
-                        size_part, msg_part = chunk, ""
+                        size_part, msg_part = chunk, ''
 
                     size_buf += size_part
                     msg_buf += msg_part

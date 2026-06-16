@@ -32,10 +32,10 @@ class AccessManager:
         self.write_registry = manager.dict()
         self.lock = multiprocessing.Lock()
 
-        self.reader_file = manager.Value(ctypes.c_wchar_p, "None")
+        self.reader_file = manager.Value(ctypes.c_wchar_p, 'None')
         self.reader_lck = multiprocessing.Lock()
 
-        self.writer_file = manager.Value(ctypes.c_wchar_p, "None")
+        self.writer_file = manager.Value(ctypes.c_wchar_p, 'None')
         self.writer_lck = multiprocessing.Lock()
 
     def writing_lock(self, app_id, filename):

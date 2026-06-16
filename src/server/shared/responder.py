@@ -19,14 +19,14 @@ class _Responder(multiprocessing.Process):
                 break  # noqa
 
             (sock, result) = conn_result
-            logging.info(f"Responding to {sock.getpeername()}")
+            logging.info(f'Responding to {sock.getpeername()}')
 
-            if not sock.send_msg({"result": result}):
-                logging.info(f"Failed to send result to client {sock.getpeername()}")
+            if not sock.send_msg({'result': result}):
+                logging.info(f'Failed to send result to client {sock.getpeername()}')
             sock.close()
 
     def stop(self):
-        logging.info("Stopping worker: %s" % self.__class__.__name__)
+        logging.info('Stopping worker: %s' % self.__class__.__name__)
 
         self._incoming_q.put(self.SENTINEL)
         self.join()

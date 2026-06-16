@@ -3,7 +3,7 @@ import datetime
 
 
 class LogEntry:
-    LOG_STRUCTURE_REGEX = r"\[(.*)\]\[(.*)\](.*)$"
+    LOG_STRUCTURE_REGEX = r'\[(.*)\]\[(.*)\](.*)$'
 
     def __init__(self, date, tags, content):
         self._date = date
@@ -21,16 +21,16 @@ class LogEntry:
         date, tags, content = result.groups()
 
         date = datetime.datetime.fromisoformat(date)
-        tags = tags.split("|")
+        tags = tags.split('|')
 
         return cls(date, tags, content)
 
     def to_str(self):
         timestamp = self._date
-        tags = "|".join(self._tags)
+        tags = '|'.join(self._tags)
         message = self._content
 
-        return f"[{timestamp}][{tags}] {message}\n"
+        return f'[{timestamp}][{tags}] {message}\n'
 
     @property
     def date(self):
