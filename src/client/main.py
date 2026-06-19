@@ -1,11 +1,11 @@
 import os
-import time
 import argparse
 import random
 
 from datetime import datetime, timedelta
 
 from .framework import logging_client
+from src.common import time
 
 parser = argparse.ArgumentParser()
 
@@ -27,6 +27,10 @@ MESSAGES = [
 ]
 
 
+def build_random_date_filter(base_date: datetime):
+    return (base_date + timedelta(hours=5), base_date + timedelta(hours=1))
+
+
 def main(args) -> None:
     port = SERVER_PORT
     server_addr = SERVER_ADDR
@@ -36,18 +40,21 @@ def main(args) -> None:
         server_addr=server_addr,
         app_id=args.app,
         no_timestamp=args.no_timestamp,
-        profile=args.profile,
     )
 
     if args.read:
+        dates_filter = (
+            build_random_date_filter(datetime(year=2021, month=10, day=5))
+            if args.filter_dates
+            else None
+        )
         repeat_for = SAMPLE_SIZE if args.repeat else 1
 
         for _ in range(repeat_for):
-            c.read(
-                pattern=args.pattern,
-                tag=args.tag,
-                filter_dates=args.filter_dates,
+            result = c.read(
+                pattern=args.pattern, tag=args.tag, dates_filter=dates_filter
             )
+            print('Result: ', result.get('result'))
     else:
         now = datetime(year=2021, month=10, day=5)
 
@@ -57,32 +64,12 @@ def main(args) -> None:
         if args.no_timestamp:
             dates = [dates[0]]
 
-        for d in dates:
+        for _ in range(SAMPLE_SIZE):
             message = random.choice(MESSAGES)
             tag = random.choice(TAGS)
 
-            c.write(d, message, tag)
-
-
-class Timer:
-    """
-    Small class to use as a context manager
-    for measuring execution times.
-    """
-
-    def __init__(self):
-        self.start = None
-        self.stop = None
-
-    def __enter__(self):
-        self.start = time.time()
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        self.stop = time.time()
-
-    def get_elapsed(self):
-        return self.start and self.stop and self.stop - self.start
+            result = c.write(message, tag)
+            print('Result: ', result.get('result'))
 
 
 if __name__ == '__main__':
@@ -118,7 +105,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    timer = Timer()
+    timer = time.Timer()
 
     with timer:
         main(args)
