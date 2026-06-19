@@ -1,38 +1,6 @@
-from datetime import datetime, timedelta
-from typing import Tuple
+import datetime
 
 from src.common import SocketWrapper
-
-
-def build_read_msg(app_id, tag=None, to=None, from_=None, pattern=None):
-    read_msg = {'app_id': app_id or 'testing_app_id'}
-
-    if to:
-        read_msg['to'] = to.isoformat()
-
-    if from_:
-        read_msg['from'] = from_.isoformat()
-
-    if pattern:
-        read_msg['pattern'] = pattern
-
-    if tag:
-        read_msg['tag'] = tag
-
-    return read_msg
-
-
-def build_write_msg(current_date, app_id, message, tags):
-    return {
-        'app_id': app_id or 'testing_app_id',
-        'message': message,
-        'tags': tags,
-        'timestamp': current_date.isoformat(),
-    }
-
-
-def build_random_date_filter(base_date: datetime) -> Tuple[datetime, datetime]:
-    return (base_date + timedelta(hours=5), base_date + timedelta(hours=1))
 
 
 class Client:
@@ -44,39 +12,65 @@ class Client:
         self.port: int = kwargs.get('port') or 12345
         self.server_addr = kwargs.get('server_addr')
 
-        self.app_id = kwargs.get('app_id')
+        self.app_id = kwargs.get('app_id') or 'testing_app_id'
         self.no_timestamp = kwargs.get('no_timestamp')
 
         # Deprecado. Compatibilidad hacia atras.
         self.profile = kwargs.get('profile')
+        self.sock = SocketWrapper()
 
-    def _send_log_data(self, server_addr, port, payload):
-        sock = SocketWrapper()
-        sock.connect((server_addr, port))
+    def _send_operation(self, server_addr, port, payload):
+        self.sock.connect((server_addr, port))
 
-        if not sock.send_msg(payload):
-            sock.close()
+        if not self.sock.send_msg(payload):
+            self.sock.close()
             return None
 
-        response = sock.recv_msg()
+        response = self.sock.recv_msg()
 
-        sock.close()
+        self.sock.close()
 
         print('Socket closed!')
 
         return response
 
-    def read(self, pattern=None, tag=None, filter_dates=False) -> None:
-        now = datetime(year=2021, month=10, day=5)
-        (to, _from_) = (None, None)
+    def _build_read_msg(self, tag=None, range_filter=(None, None), pattern=None):
+        read_msg = {'app_id': self.app_id}
 
-        if filter_dates:
-            to, _from_ = build_random_date_filter(now)
+        (to, from_) = range_filter
 
-        read_msg = build_read_msg(
-            self.app_id,
-            to=to,
-            from_=_from_,
+        if to:
+            read_msg['to'] = to.isoformat()
+
+        if from_:
+            read_msg['from'] = from_.isoformat()
+
+        if pattern:
+            read_msg['pattern'] = pattern
+
+        if tag:
+            read_msg['tag'] = tag
+
+        return read_msg
+
+    def _build_write_msg(self, date, message, tags):
+        if not date or not message:
+            raise ValueError('Date and message are required')
+
+        return {
+            'app_id': self.app_id,
+            'message': message,
+            'tags': tags,
+            'timestamp': date.isoformat(),
+        }
+
+    def read(self, **kwargs) -> None:
+        pattern = kwargs.get('pattern')
+        tag = kwargs.get('tag')
+        dates_filter = kwargs.get('dates_filter')
+
+        read_msg = self._build_read_msg(
+            range_filter=dates_filter if dates_filter else (None, None),
             tag=tag,
             pattern=pattern,
         )
@@ -85,20 +79,14 @@ class Client:
         # Solamente para forzar un error en el servidor y ver cómo se comporta el cliente.
         # if args.invalid_params:
         #     read_msg["app_id"] = ""
+        return self._send_operation(self.server_addr, self.port + 1, read_msg)
 
-        result = self._send_log_data(self.server_addr, self.port + 1, read_msg)
-
-        if not self.profile:
-            print(f'Aplication ID = {self.app_id} Result: \n {result.get("result")}')
-
-    def write(self, d, message, tags) -> None:
-        msg = build_write_msg(d, self.app_id, message, tags)
+    def write(self, message, tags) -> None:
+        now = datetime.datetime.now()
+        message = self._build_write_msg(now, message, tags)
 
         # Solamente para forzar un error en el servidor y ver cómo se comporta el cliente.
         if self.no_timestamp:
-            msg.pop('timestamp')
+            message.pop('timestamp')
 
-        result = self._send_log_data(self.server_addr, self.port, msg)
-
-        if not self.profile:
-            print(f'Application ID = {self.app_id} Result: \n {result.get("result")}')
+        return self._send_operation(self.server_addr, self.port, message)
