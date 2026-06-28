@@ -1,12 +1,14 @@
 echo 'Starting test...'
 
 # run processes and store pids in array
-for i in {1..10}; do
-    python3 -m src.client.main  --app $i  &
-    pids[${i}]=$!
+for app in {1..10}; do
+    # Writers
+    python3 -m src.client.main --app $app &
+    pids[${app}]=$!
 
-    python3 -m src.client.main  --repeat --read --app $i  &
-    xpids[${i}]=$!
+    # Readers
+    python3 -m src.client.main --repeat --read --app $app  &
+    xpids[${app}]=$!
 done
 
 echo 'Processes started, waiting for them to finish...'

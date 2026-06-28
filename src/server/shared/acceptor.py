@@ -24,6 +24,8 @@ class Acceptor(multiprocessing.Process):
         self._socket = SocketWrapper()
         self._socket.bind_and_listen(port, listen_backlog)
 
+        logging.info('Listening for new connections in %s' % port)
+
     def __handle_client_connection(self, client_sock):
         if self._dispatch_q.qsize() >= self.THROTTLING_THRESHOLD:
             logging.info(

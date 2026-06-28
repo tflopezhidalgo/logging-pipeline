@@ -10,11 +10,11 @@ from src.common import time
 parser = argparse.ArgumentParser()
 
 SERVER_ADDR = os.environ.get('CLI_SERVER_ADDRESS', '127.0.0.1')
-SERVER_PORT = int(os.environ.get('CLI_SERVER_WRITE_PORT', '4100'))
+SERVER_PORT = int(os.environ.get('CLI_SERVER_WRITE_PORT', '4104'))
 
 SAMPLE_SIZE = 50
 
-TAGS = ['error', 'warning', 'info', 'debug', 'unicorn']
+TAGS = ['test', 'error', 'warning', 'info', 'debug', 'unicorn']
 
 MESSAGES = [
     'Hey',
@@ -54,11 +54,12 @@ def main(args) -> None:
             result = c.read(
                 pattern=args.pattern, tag=args.tag, dates_filter=dates_filter
             )
-            print('Result: ', result.get('result'))
+            print('Result:', result.get('result'))
     else:
+        # (Write path)
+
         now = datetime(year=2021, month=10, day=5)
 
-        # Generate a list of timestamps to send.
         dates = [now + d * timedelta(minutes=10) for d in range(SAMPLE_SIZE)]
 
         if args.no_timestamp:
@@ -66,10 +67,11 @@ def main(args) -> None:
 
         for _ in range(SAMPLE_SIZE):
             message = random.choice(MESSAGES)
-            tag = random.choice(TAGS)
 
-            result = c.write(message, tag)
-            print('Result: ', result.get('result'))
+            tags = [random.choice(TAGS), random.choice(TAGS)]
+
+            result = c.write(message, tags)
+            print('Result:', result.get('result'))
 
 
 if __name__ == '__main__':

@@ -17,22 +17,32 @@ class Client:
 
         # Deprecado. Compatibilidad hacia atras.
         self.profile = kwargs.get('profile')
-        self.sock = SocketWrapper()
 
     def _send_operation(self, server_addr, port, payload):
-        self.sock.connect((server_addr, port))
+        # We have to create it create so FD doesn't get
+        # reused and closed by the OS before we can send the message.
+        sock = SocketWrapper()
+        sock.connect((server_addr, port))
 
-        if not self.sock.send_msg(payload):
-            self.sock.close()
+        print('Connected to server!', (server_addr, port))
+
+        if not sock.send_msg(payload):
+            sock.close()
+            print("Couldn't send message to server. Socket closed.")
             return None
 
-        response = self.sock.recv_msg()
+        response = sock.recv_msg()
+        sock.close()
 
-        self.sock.close()
-
-        print('Socket closed!')
+        print('Socket closed gracefully!')
 
         return response
+
+    def get_read_port(self):
+        return self.port + 1
+
+    def get_write_port(self):
+        return self.port
 
     def _build_read_msg(self, tag=None, range_filter=(None, None), pattern=None):
         read_msg = {'app_id': self.app_id}
@@ -79,7 +89,7 @@ class Client:
         # Solamente para forzar un error en el servidor y ver cómo se comporta el cliente.
         # if args.invalid_params:
         #     read_msg["app_id"] = ""
-        return self._send_operation(self.server_addr, self.port + 1, read_msg)
+        return self._send_operation(self.server_addr, self.get_read_port(), read_msg)
 
     def write(self, message, tags) -> None:
         now = datetime.datetime.now()
@@ -89,4 +99,4 @@ class Client:
         if self.no_timestamp:
             message.pop('timestamp')
 
-        return self._send_operation(self.server_addr, self.port, message)
+        return self._send_operation(self.server_addr, self.get_write_port(), message)
