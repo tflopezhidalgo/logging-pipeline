@@ -3,6 +3,10 @@ import socket
 
 
 class JSONEncoder:
+    """
+    TBD.
+    """
+
     def serialize(self, data):
         return json.dumps(data)
 
@@ -85,9 +89,9 @@ class SocketWrapper:
 
             # Now fetch the remaining bytes of the message until we have the full message
             while pending_bytes_to_recv:
-                chunk = self._sock.recv(pending_bytes_to_recv).decode()
-                pending_bytes_to_recv -= len(chunk)
-                msg_buf += chunk
+                incoming_byte = self._sock.recv(pending_bytes_to_recv).decode()
+                pending_bytes_to_recv -= len(incoming_byte)
+                msg_buf += incoming_byte
 
             return self.encoder.deserialize(msg_buf)
 

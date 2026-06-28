@@ -1,4 +1,20 @@
-echo 'Starting test...'
+#
+# Filtering test: exercises the filtering feature against existing logs.
+#
+
+# Make sure there's data we can query later.
+
+for app in {1..5}; do
+    python3 -m src.client.main --app $app &
+    pids[${app}]=$!
+done
+
+# wait for all pids
+for pid in ${pids[*]}; do
+    wait $pid
+done
+
+echo 'Starting test...' && sleep 2
 
 echo "---------- Now filtering by app id... -------------"
 
@@ -50,3 +66,5 @@ for pid in ${pids[*]}; do
 done
 
 echo  'Finished'
+
+rm -rf logs
