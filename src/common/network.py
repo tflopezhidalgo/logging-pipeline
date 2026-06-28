@@ -1,17 +1,13 @@
 import json
 import socket
 
-MSG_SEP = '/'
 
+class JSONEncoder:
+    def serialize(self, data):
+        return json.dumps(data)
 
-def serialize(data):
-    json_data = json.dumps(data)
-    msg = f'{len(json_data)}{MSG_SEP}{json_data}'
-    return msg.encode('utf8')
-
-
-def deserialize(data):
-    pass
+    def deserialize(self, data):
+        return json.loads(data)
 
 
 class SocketWrapper:
@@ -21,12 +17,14 @@ class SocketWrapper:
     """
 
     CHUNK_SIZE = 10
+    MSG_SEP = '/'
 
     def __init__(self, sock=None):
         if sock is None:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self._sock = sock
+        self.encoder = JSONEncoder()
 
     def bind_and_listen(self, port, listen_backlog):
         self._sock.bind(('0.0.0.0', port))
@@ -39,10 +37,15 @@ class SocketWrapper:
         c, addr = self._sock.accept()
         return SocketWrapper(sock=c), addr
 
+    def getpeername(self):
+        return self._sock.getpeername()
+
     def send_msg(self, data):
         try:
-            msg = serialize(data)
-            self._sock.sendall(msg)
+            encoded = self.encoder.serialize(data)
+            msg = f'{len(encoded)}{self.MSG_SEP}{encoded}'
+
+            self._sock.sendall(msg.encode('utf8'))
             return len(msg)
         except (Exception, OSError):
             return 0
@@ -54,7 +57,7 @@ class SocketWrapper:
         try:
 
             def chunk_has_msg_sep(chunk):
-                return chunk.find(MSG_SEP) != -1
+                return chunk.find(self.MSG_SEP) != -1
 
             done = False
 
@@ -64,10 +67,10 @@ class SocketWrapper:
             while not done:
                 try:
                     # chunk = self._sock.recv(self.CHUNK_SIZE).decode()
-                    chunk = self._sock.recv(1).decode()
+                    chunk = self._sock.recv(1).decode('utf8')
 
                     if chunk_has_msg_sep(chunk):
-                        size_part, msg_part = chunk.split(MSG_SEP, 1)
+                        size_part, msg_part = chunk.split(self.MSG_SEP, 1)
                         done = True
                     else:
                         size_part, msg_part = chunk, ''
@@ -86,12 +89,10 @@ class SocketWrapper:
                 pending_bytes_to_recv -= len(chunk)
                 msg_buf += chunk
 
-            return json.loads(msg_buf)
+            return self.encoder.deserialize(msg_buf)
+
         except (Exception, OSError):
             return None
-
-    def getpeername(self):
-        return self._sock.getpeername()
 
     def close(self):
         try:
