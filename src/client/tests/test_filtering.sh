@@ -4,6 +4,8 @@
 
 # Make sure there's data we can query later.
 
+echo 'Writing some initial logs...'
+
 for app in {1..5}; do
     python3 -m src.client.main --app $app &
     pids[${app}]=$!
@@ -14,8 +16,7 @@ for pid in ${pids[*]}; do
     wait $pid
 done
 
-echo 'Starting test...' && sleep 2
-
+echo 'Done. Now testing'
 echo "---------- Now filtering by app id... -------------"
 
 # run processes and store pids in array
@@ -53,10 +54,10 @@ for pid in ${pids[*]}; do
     wait $pid
 done
 
-echo "---------- Now filtering by pattern = '.*\[info\].*' -------------"
+echo "---------- Now filtering by pattern = '.*\[info.*' -------------"
 
 for i in {1..2}; do
-    python3 -m src.client.main --pattern '.*\[info\].*' --read --app $i  &
+    python3 -m src.client.main --pattern '.*\[info.*' --read --app $i  &
     pids[${i}]=$!
 done
 
@@ -66,5 +67,3 @@ for pid in ${pids[*]}; do
 done
 
 echo  'Finished'
-
-rm -rf logs

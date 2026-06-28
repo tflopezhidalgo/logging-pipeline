@@ -20,7 +20,6 @@ class SocketWrapper:
     protocol-related logic.
     """
 
-    CHUNK_SIZE = 10
     MSG_SEP = '/'
 
     def __init__(self, sock=None):
@@ -60,8 +59,8 @@ class SocketWrapper:
 
         try:
 
-            def chunk_has_msg_sep(chunk):
-                return chunk.find(self.MSG_SEP) != -1
+            def chunk_has_msg_sep(c):
+                return c.find(self.MSG_SEP) != -1
 
             done = False
 
@@ -70,7 +69,6 @@ class SocketWrapper:
             # we have the size of the message, which is required to know how many bytes we need to fetch
             while not done:
                 try:
-                    # chunk = self._sock.recv(self.CHUNK_SIZE).decode()
                     chunk = self._sock.recv(1).decode('utf8')
 
                     if chunk_has_msg_sep(chunk):
@@ -85,13 +83,13 @@ class SocketWrapper:
                 except socket.timeout:
                     return None
 
-            pending_bytes_to_recv = int(size_buf) - len(msg_buf)
+            pending = int(size_buf) - len(msg_buf)
 
             # Now fetch the remaining bytes of the message until we have the full message
-            while pending_bytes_to_recv:
-                incoming_byte = self._sock.recv(pending_bytes_to_recv).decode()
-                pending_bytes_to_recv -= len(incoming_byte)
-                msg_buf += incoming_byte
+            while pending:
+                chunk = self._sock.recv(pending).decode()
+                pending -= len(chunk)
+                msg_buf += chunk
 
             return self.encoder.deserialize(msg_buf)
 
