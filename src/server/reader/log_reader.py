@@ -53,8 +53,10 @@ class PatternFilter(Filter):
         return bool(pattern.match(log_entry.raw))
 
 
-class _LineFilter:
-    """ """
+class Searcher:
+    """
+    TBD.
+    """
 
     def __init__(self, params):
         self.filters = []
@@ -75,7 +77,7 @@ class _LineFilter:
         if pattern:
             self.filters.append(PatternFilter(pattern))
 
-    def line_matches_filters(self, line):
+    def is_match(self, line):
         entry = LogEntry.from_str(line)
 
         return all(
@@ -93,7 +95,12 @@ class LogReader(multiprocessing.Process):
     FAILED_MSG = 'Failed to read files'
     FILE_OPENING_MODE = 'r'
 
-    def __init__(self, operation_q, result_q, access_manager):
+    def __init__(
+        self,
+        operation_q: multiprocessing.Queue[tuple],
+        result_q: multiprocessing.Queue[tuple],
+        access_manager,
+    ):
         super().__init__()
 
         self._operation_q = operation_q
@@ -133,26 +140,20 @@ class LogReader(multiprocessing.Process):
 
         return logs
 
-    def __perform_operation(self, params):
+    def __perform_operation(self, params) -> list[str]:
         app_id = params['app_id']
 
-        line_filter = _LineFilter(params)
-
-        data = []
+        s = Searcher(params)
+        matching_lines: list[str] = []
 
         for logfile in self.__get_filenames_to_read(params):
             filepath = os.path.join(self.BASE_PATH, self.LOGS_FOLDER, app_id, logfile)
 
             with self._access_manager.reading_lock(app_id, logfile):
                 with open(filepath, self.FILE_OPENING_MODE) as logfile:
-                    data += list(
-                        filter(
-                            line_filter.line_matches_filters,
-                            logfile,
-                        )
-                    )
+                    matching_lines += list(filter(s.is_match, logfile))
 
-        return ''.join(data)
+        return matching_lines if len(matching_lines) > 0 else []
 
     def run(self):
         while True:

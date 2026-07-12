@@ -11,7 +11,7 @@ class WriteError(RuntimeError):
 
 
 class LogWriter(multiprocessing.Process):
-    SENTINEL = None
+    SENTINEL = (None, None)
     LOGS_FOLDER = 'logs'
     BASE_PATH = '.'
     SUCEEDED_MSG = 'Success'
@@ -21,8 +21,8 @@ class LogWriter(multiprocessing.Process):
     def __init__(self, operation_q, result_q, access_control_mgr):
         super().__init__()
 
-        self._operation_q = operation_q
-        self._result_q = result_q
+        self._operation_q: multiprocessing.Queue[tuple] = operation_q
+        self._result_q: multiprocessing.Queue[tuple] = result_q
         self._access_control_mgr = access_control_mgr
 
     def __build_log_data(self, params):

@@ -25,7 +25,7 @@ class Router(multiprocessing.Process):
         raise NotImplementedError()
 
     def __ask_client_for_op(self, connection):
-        recvd = connection.recv_msg()
+        recvd = connection.recv()
         if recvd is None:
             raise Exception()
         return recvd
@@ -35,6 +35,7 @@ class Router(multiprocessing.Process):
 
     def run(self):
         while True:
+            # accepted socket.
             connection = self._pending_q.get()
 
             if connection is self.SENTINEL:
@@ -58,7 +59,8 @@ class Router(multiprocessing.Process):
 
             logging.info(f'Routing message to queue {q_index}')
 
-            self._dispatch_qs[q_index].put((connection, operation_params))
+            dispatch_q = self._dispatch_qs[q_index]
+            dispatch_q.put((connection, operation_params))
 
     def stop(self):
         self._pending_q.put(self.SENTINEL)

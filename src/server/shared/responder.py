@@ -21,7 +21,7 @@ class _Responder(multiprocessing.Process):
             (sock, result) = conn_result
             logging.info(f'Responding to {sock.getpeername()}')
 
-            if not sock.send_msg({'result': result}):
+            if not sock.send({'result': result}):
                 logging.info(f'Failed to send result to client {sock.getpeername()}')
             sock.close()
 

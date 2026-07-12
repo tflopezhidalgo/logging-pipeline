@@ -5,7 +5,7 @@ from src.common import SocketWrapper
 
 class Client:
     """
-    ...
+    TBD.
     """
 
     def __init__(self, **kwargs) -> None:
@@ -26,12 +26,12 @@ class Client:
 
         print('Connected to server!', (server_addr, port))
 
-        if not sock.send_msg(payload):
+        if not sock.send(payload):
             sock.close()
             print("Couldn't send message to server. Socket closed.")
             return None
 
-        response = sock.recv_msg()
+        response = sock.recv()
         sock.close()
 
         print('Socket closed gracefully!')
@@ -89,7 +89,10 @@ class Client:
         # Solamente para forzar un error en el servidor y ver cómo se comporta el cliente.
         # if args.invalid_params:
         #     read_msg["app_id"] = ""
-        return self._send_operation(self.server_addr, self.get_read_port(), read_msg)
+        op_result = self._send_operation(
+            self.server_addr, self.get_read_port(), read_msg
+        )
+        return op_result
 
     def write(self, message, tags) -> None:
         now = datetime.datetime.now()
@@ -99,4 +102,7 @@ class Client:
         if self.no_timestamp:
             message.pop('timestamp')
 
-        return self._send_operation(self.server_addr, self.get_write_port(), message)
+        op_result = self._send_operation(
+            self.server_addr, self.get_write_port(), message
+        )
+        return op_result
