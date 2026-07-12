@@ -21,6 +21,7 @@ class Acceptor(multiprocessing.Process):
         self._alive = multiprocessing.Value('b', False)
         self._dispatch_q = dispatch_queue
 
+        # Bind the socket to the address and hold.
         self._socket = SocketWrapper()
         self._socket.bind_and_listen(port, listen_backlog)
 
@@ -31,7 +32,7 @@ class Acceptor(multiprocessing.Process):
             logging.info(
                 f'Making client {client_sock.getpeername()} aware of throttling'
             )
-            sent = client_sock.send_msg(
+            sent = client_sock.send(
                 {'result': ('Server is not available now. Please try again later.')}
             )
             if not sent:

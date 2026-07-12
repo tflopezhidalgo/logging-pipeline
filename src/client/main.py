@@ -10,7 +10,7 @@ from src.common import time
 parser = argparse.ArgumentParser()
 
 SERVER_ADDR = os.environ.get('CLI_SERVER_ADDRESS', '127.0.0.1')
-SERVER_PORT = int(os.environ.get('CLI_SERVER_WRITE_PORT', '4104'))
+SERVER_PORT = int(os.environ.get('CLI_SERVER_WRITE_PORT', '4106'))
 
 SAMPLE_SIZE = 50
 
@@ -54,7 +54,8 @@ def main(args) -> None:
             result = c.read(
                 pattern=args.pattern, tag=args.tag, dates_filter=dates_filter
             )
-            print('Result:', result.get('result'))
+            logs = result.get('result')
+            print('Result size:', len(logs))
     else:
         # (Write path)
 
@@ -71,7 +72,8 @@ def main(args) -> None:
             tags = [random.choice(TAGS), random.choice(TAGS)]
 
             result = c.write(message, tags)
-            print('Result:', result.get('result'))
+            logs = result.get('result')
+            print('Result size:', len(logs))
 
 
 if __name__ == '__main__':

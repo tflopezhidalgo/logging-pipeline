@@ -43,7 +43,7 @@ class SocketWrapper:
     def getpeername(self):
         return self._sock.getpeername()
 
-    def send_msg(self, data):
+    def send(self, data):
         try:
             encoded = self.encoder.serialize(data)
             msg = f'{len(encoded)}{self.MSG_SEP}{encoded}'
@@ -53,7 +53,7 @@ class SocketWrapper:
         except (Exception, OSError):
             return 0
 
-    def recv_msg(self):
+    def recv(self):
         size_buf = ''
         msg_buf = ''
 
