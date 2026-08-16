@@ -6,6 +6,10 @@ Implementa un patron cliente-servidor para enviar y recibir logs desde clientes.
 
 Este codigo ejercita fuertemente el acceso concurrente a recursos compartidos por lo que se usan distintas tecnicas de sincronizacion (locks, semaforos, etc) para asegurar la integridad de los datos y evitar condiciones de carrera.
 
+### Arquitectura general
+
+<img width="1135" height="549" alt="image" src="https://github.com/user-attachments/assets/05003fb1-e7ea-4ca2-83c0-c3482fb29d35" />
+
 ### Almacenamiento de logs
 
 Los logs son archivados en archivos de texto plano junto con metadata (hora, tags). Generando una carpeta por cada una de las aplicaciones (`app_id`) que luego pueden ser consultadas a traves de operaciones de lectura.
